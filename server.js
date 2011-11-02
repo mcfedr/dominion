@@ -2,13 +2,20 @@ require('mootools');
 var player = require('./player.js');
 var cards = require('./cards.js');
 
-game = {
+var gamenum = 0;
+
+var Game = new Class({
 	handlers: [],
 	started: false,
 	ended: false,
 	nextPlayer: -1,
 	
+	initialize: function() {
+		this.gamenum = gamenum++;
+	},
+	
 	start: function() {
+		console.log('starting game ' + this.gamenum);
 		this.started = new Date();
 		this.message('the game has started\n');
 		
@@ -36,7 +43,7 @@ game = {
 		}, this);
 		
 		//start the first turn
-		this.turn();
+		this.turn.delay(0, this);
 	},
 	
 	turn: function() {
@@ -68,7 +75,7 @@ game = {
 			return true;
 		}
 		else if(commands[0] == 'show') {
-			if(commands[1] == 'deck' && this.deck) {
+			if(commands[1] == 'bank' && this.deck) {
 				handler.message(this.deck.describe());
 				return true;
 			}
@@ -99,13 +106,14 @@ game = {
 	},
 	
 	end: function() {
+		console.log('finished game ' + this.gamenum);
 		this.ended = true;
 		this.message('the game has finished\n');
 		this.handlers.each(function(h) {
 			h.end();
 		});
 	}
-};
+});
 
 var Turn = new Class({
 	ended: false,
@@ -114,19 +122,14 @@ var Turn = new Class({
 		this.handler = handler;
 		this.after = after;
 		this.player = this.handler.player;
-		if(this.player.hand.some(function(hcard) {
-			return !!hcard.card.doAction;
-		})) {
-			this.actions = 1;
-		}
-		else {
-			this.actions = 0;
-		}
+		this.actions = 1;
 		this.buys = 1;
 		this.spent = 0;
 		this.treasure = 0;
 		this.handler.turn = this;
 		this.handler.message('its your turn\n');
+		this.handler.show(['show', 'hand']);
+		this.handler.message('\n');
 		this.game.message('its ' + this.player.name + '\'s turn\n', this.handler);
 		this.resetTimeout();
 	},
@@ -210,13 +213,13 @@ var Turn = new Class({
 				});
 				if(hcard) {
 					if(hcard.card.doAction) {
-						if(hcard.card.doAction(this)) {
+						hcard.card.doAction(this, function(out) {
 							this.actions--;
 							hcard.played = true;
-							this.handler.message('you played a ' + card + '\n');
+							this.handler.message('you played a ' + card + '\n' + (out ? '\n' : ''));
 							this.game.message(this.player.name + ' played a ' + card + '\n', this.handler);
 							this.checkEnd();
-						}
+						}.bind(this));
 					}
 					else {
 						this.handler.message(card + ' isn\'t an action card\n');
@@ -244,7 +247,10 @@ var Turn = new Class({
 	
 	checkEnd: function() {
 		if(!this.game.checkEnd()) {
-			if(this.buys == 0 && this.actions == 0) {
+			var hasActionCard = this.player.hand.some(function(hcard) {
+				return hcard.card.doAction;
+			});
+			if(this.buys == 0 && (!hasActionCard || this.actions == 0)) {
 				this.end();
 			}
 		}
@@ -264,16 +270,27 @@ var Turn = new Class({
 
 var PlayerHandler = new Class({
 	kicks: 0,
-	initialize: function(game, socket) {
-		this.game = game;
+	ended: false,
+	initialize: function(socket) {
 		this.socket = socket;
 		socket.setEncoding('utf8');
 		socket.on('data', this.data.bind(this));
+		socket.on('end', this.remove.bind(this));
+		socket.on('error', this.remove.bind(this));
 		
 		this.nextData = function(name) {
 			this.player = new player.Player(name);
+			this.player.handler = this;
+			if(opengame.started) {
+				opengame = new Game();
+			}
+			opengame.handlers.push(this);
+			this.game = opengame;
+			console.log(this.player.name + '--connected');
 			this.message('Welcome ' + this.player.name + '\n'
-				+ 'Type help for a list of commands\n');
+				+ 'You have joined game ' + this.game.gamenum+ '\n'
+				+ 'Type help for a list of commands\n\n');
+			return false;
 		};
 		
 		this.message("Hi\nWhat is your name?\n");
@@ -281,10 +298,14 @@ var PlayerHandler = new Class({
 	
 	data: function(data) {
 		data = data.trim();
+		if(this.player) {
+			console.log(this.player.name + '<-' + data.replace(/\n/g, ' '));
+		}
 		//console.log('got data:' + data);
 		if(this.nextData) {
-			this.nextData(data);
-			this.nextData = false;
+			if(!this.nextData(data)) {
+				this.nextData = false;
+			}
 		}
 		else {
 			var commands = data.split(' ');
@@ -297,9 +318,14 @@ var PlayerHandler = new Class({
 				case 'quit':
 				case 'exit':
 					this.end();
-					break
+					return;
 				case 'show':
 					if(this.show(commands)) {
+						break;
+					}
+				case 'describe':
+					if(cards[commands[1]]) {
+						this.message(new cards[commands[1]]().description + '\n');
 						break;
 					}
 				default:
@@ -326,7 +352,7 @@ var PlayerHandler = new Class({
 				}
 				else {
 					this.message('game started at ' + this.game.started
-						+ 'its currently ' + this.game.handlers[game.nextPlayer] + '\'s turn');
+						+ 'its currently ' + this.game.handlers[this.game.nextPlayer] + '\'s turn');
 				}
 				return true;
 			case 'players':
@@ -377,9 +403,10 @@ var PlayerHandler = new Class({
 			+ 'start - start the game\n'
 			+ 'show players - show a list of connected players\n'
 			+ 'show game - show info about the game state\n'
-			+ 'show deck - show the currect game deck\n'
+			+ 'show bank - show the currect game bank\n'
 			+ 'show trash - show the trash\n'
 			+ 'show hand - list the cards currently in your hand\n'
+			+ 'describe [card] - describe what [card] does\n'
 			+ 'during your turn:\n'
 			+ 'show actions - the number of actions you have left\n'
 			+ 'show buys - the number of buys you have left\n'
@@ -391,24 +418,41 @@ var PlayerHandler = new Class({
 	},
 	
 	message: function(message) {
-		this.socket.write(message);
+		if(!this.ended) {
+			if(this.player && message != '' && message != '\n') {
+				console.log(this.player.name + '->' + message.replace(/\n/g, ' '));
+			}
+			this.socket.write(message);
+		}
 	},
 	
 	end: function() {
-		this.game.handlers.erase(this);
 		this.socket.end('Bye\n');
+		this.remove();
+		if(this.player) {
+			console.log(this.player.name + '--disconnected');
+		}
+	},
+	
+	remove: function() {
+		this.ended = true;
+		if(this.player) {
+			if(this.turn) {
+				this.turn.end();
+			}
+			this.game.handlers.erase(this);
+		}
 	}
 });
 
 var net = require('net');
 
+var opengame = new Game();
+
 var server = net.createServer(function(socket) {
-	if(!game.started) {
-		game.handlers.push(new PlayerHandler(game, socket));
-	}
-	else {
-		socket.end('The game has already stated\n');
-	}
+	new PlayerHandler(socket);
 });
 
 server.listen(5678);
+var address = server.address();
+console.log('Server started on ' + address.address + ':' + address.port);

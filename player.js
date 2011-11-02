@@ -35,6 +35,19 @@ var Player = exports.Player = new Class({
 		}
 	},
 	
+	trash: function(card) {
+		this.cards.erase(card);
+		this.deck.erase(card);
+		this.discard.erase(card);
+		this.hand.each(function(hcard) {
+			if(hcard.card == card) {
+				this.hand.erase(hcard);
+			}
+		}, this);
+		this.handler.message('you trashed a ' + card.name + '\n');
+		this.handler.game.message(this.name + ' trashed a ' + card.name + '\n', this.handler);
+	},
+	
 	discardHand: function() {
 		this.hand.each(function(h) {
 			this.discard.push(h.card);
@@ -45,7 +58,7 @@ var Player = exports.Player = new Class({
 	score: function() {
 		var s = 0;
 		this.cards.each(function(c) {
-			s += c.getPoints(this);
+			s += (c.getPoints ? c.getPoints(this) : c.points);
 		}, this);
 		return s;
 	}
