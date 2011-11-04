@@ -25,31 +25,42 @@ var Player = exports.Player = new Class({
 	
 	gain: function(card) {
 		this.discard.push(card);
+		this.handler.message('you gained a ' + card.name);
+		this.handler.game.message(this.name + ' gained a ' + card.name, this.handler);
 	},
 	
-	reveal: function() {
+	reveal: function(pri) {
 		if(this.deck.length == 0) {
 			this.shuffle();
 		}
-		return this.deck.pop()
+		var c = this.deck.pop();
+		if(!pri) {
+			this.handler.message('you revealed a ' + card.name);
+			this.handler.game.message(this.name + ' revealed a ' + card.name, this.handler);
+		}
 	},
 	
 	draw: function(count) {
 		count = count || 5;
 		var c, i;
 		for(i = 0;i < count;i++) {
-			this.hand.push(this.reveal());
+			this.hand.push(this.reveal(true));
 		}
+		this.handler.message('you drew a ' + card.name);
 	},
 	
 	play: function(card) {
 		this.hand.erase(card);
 		this.table.push(card);
+		this.handler.message('you played a ' + card.name);
+		this.handler.game.message(this.name + ' played a ' + card.name, this.handler);
 	},
 	
 	trash: function(card) {
 		this.hand.erase(card);
 		this.table.erase(card);
+		this.handler.message('you trashed a ' + card.name);
+		this.handler.game.message(this.name + ' trashed a ' + card.name, this.handler);
 	},
 	
 	cards: function() {

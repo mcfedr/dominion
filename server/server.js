@@ -30,6 +30,7 @@ var Game = new Class({
 		while(tmp.length > 0);
 		
 		this.deck = new cards.Deck(this.handlers.length);
+		this.message(this.deck.describe() + '\n');
 		
 		//deal
 		this.handlers.each(function(h) {
@@ -160,7 +161,7 @@ var Turn = new Class({
 		this.treasure = 0;
 		this.handler.turn = this;
 		this.handler.message('its your turn\n');
-		this.handler.show(['show', 'hand']);
+		this.command(['show', 'status']);
 		this.handler.message('\n');
 		this.game.message('its ' + this.player.name + '\'s turn\n', this.handler);
 		this.resetTimeout();
@@ -222,16 +223,14 @@ var Turn = new Class({
 						this.spent += cost;
 						this.buys--;
 						this.player.gain(this.game.deck.take(cardname));
-						this.handler.message('you bought a ' + cardname + '\n');
-						this.game.message(this.player.name + ' bought a ' + cardname + '\n', this.handler);
 						this.checkEnd();
 					}
 					else {
-						this.handler.message(card + ' is too expensive\n');
+						this.handler.message(cardname + ' is too expensive\n');
 					}
 				}
 				else {
-					this.handler.message(card + ' is not available\n');
+					this.handler.message(cardname + ' is not available\n');
 				}
 			}
 			else {
@@ -248,14 +247,12 @@ var Turn = new Class({
 							this.resetTimeout();
 							this.actions--;
 							this.player.play(card);
-							this.handler.message('you played a ' + cardname + '\n');
-							this.game.message(this.player.name + ' played a ' + cardname + '\n', this.handler);
 							card.doAction(this, function() {
 								this.checkEnd();
 							}.bind(this));
 						}
 						else {
-							this.handler.message(card + ' isn\'t an action card\n');
+							this.handler.message(cardname + ' isn\'t an action card\n');
 						}
 						return true;
 					}
@@ -269,6 +266,24 @@ var Turn = new Class({
 			return true;
 		}
 		return false;
+	},
+	
+	addBuys: function(count) {
+		count = count || 1;
+		this.buys += count;
+		this.handler.message('you have ' + count + ' more buy' + (count > 1 ? 's' : ''));
+	},
+	
+	addActions: function(count) {
+		count = count || 1;
+		this.actions += count;
+		this.handler.message('you have ' + count + ' more action' + (count > 1 ? 's' : ''));
+	},
+	
+	addTreasure: function(count) {
+		count = count || 1;
+		this.treasure += count;
+		this.handler.message('you have ' + count + ' more cash' + (count > 1 ? 's' : ''));
 	},
 	
 	cash: function() {

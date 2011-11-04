@@ -335,7 +335,7 @@ cards.moneylender = new Class({
 				return true;
 			}
 		})) {
-			turn.treasure += 3;
+			turn.addTreasure(3);
 			done();
 		}
 		else {
@@ -384,9 +384,9 @@ cards.festival = new Class({
 	description: '+2 Actions\n+1 Buy\n+2 Treasure',
 	cost: 5,
 	doAction: function(turn, done) {
-		turn.actions += 2;
-		turn.buys += 1;
-		turn.treasure += 2;
+		turn.addActions(2);
+		turn.addBuys();
+		turn.addTreasure(2);
 		done();
 	}
 });
@@ -400,7 +400,7 @@ cards.laboratory = new Class({
 	cost: 5,
 	doAction: function(turn, done) {
 		turn.player.draw(2);
-		turn.actions += 1;
+		turn.addActions();
 		done();
 	}
 });
@@ -502,7 +502,7 @@ cards.village = new Class({
 	cost: 3,
 	doAction: function(turn, done) {
 		turn.player.draw(1);
-		turn.actions += 2;
+		turn.addActions(2);
 		done();
 	}
 });
@@ -515,8 +515,8 @@ cards.woodcutter = new Class({
 	description: '+1 Buy\n+2 Treaure',
 	cost: 3,
 	doAction: function(turn, done) {
-		turn.buys += 1;
-		turn.treasure += 2;
+		turn.addBuys();
+		turn.addTreasure(2);
 		done();
 	}
 });
@@ -582,9 +582,9 @@ cards.market = new Class({
 	cost: 5,
 	doAction: function(turn, done) {
 		turn.player.draw(1);
-		turn.actions += 1;
-		turn.buys += 1;
-		turn.treasure += 2;
+		turn.addActions();
+		turn.addBuys();
+		turn.addTreasure();
 		done();
 	}
 });
