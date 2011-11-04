@@ -167,10 +167,10 @@ var Turn = new Class({
 		this.spent = 0;
 		this.treasure = 0;
 		this.handler.turn = this;
-		this.handler.message('its your turn\n');
+		this.handler.message('it\'s your turn\n');
 		this.command(['show', 'status']);
 		this.handler.message('\n');
-		this.game.message('its ' + this.player.name.possessive() + ' turn\n', this.handler);
+		this.game.message('it\'s ' + this.player.name.possessive() + ' turn\n', this.handler);
 		this.resetTimeout();
 	},
 	

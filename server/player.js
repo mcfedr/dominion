@@ -37,6 +37,7 @@ var Player = exports.Player = new Class({
 	},
 	
 	addtodeck: function(card, quiet) {
+		this.hand.erase(card);
 		this.deck.push(card);
 		if(!quiet) {
 			this.handler.message('you decked a ' + card.name + '\n');

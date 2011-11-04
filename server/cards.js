@@ -86,6 +86,12 @@ exports.Deck = new Class({
 		}
 	},
 	
+	isTreasure: function(name) {
+		if(this.has(name)) {
+			return this.cards[name][0].treasure > 0;
+		}
+	},
+	
 	trash: function(card) {
 		this.trashed.push(card);
 	},
@@ -425,23 +431,21 @@ cards.witch = new Class({
 		turn.player.draw(2);
 		if(turn.game.handlers.length > 1) {
 			var start = turn.game.currentPlayer;
-			var i = (start + 1) % (turn.game.handlers.length);
+			var i = start;
 			var next = function() {
+				i = (start + 1) % (turn.game.handlers.length);
+				if(i == start) {
+					done();
+					return;
+				}
 				if(turn.game.handlers[i].player.playsMoat(function(moat) {
 					if(moat) {
-						i = (i + 1) % (turn.game.handlers.length);
 						next.delay(0);
 					}
 					else {
 						if(turn.game.deck.has('curse')) {
 							turn.game.handlers[i].player.gain(turn.game.deck.take('curse'));
-							i = (i + 1) % (turn.game.handlers.length);
-							if(i != start) {
-								next.delay(0);
-							}
-							else {
-								done();
-							}
+							next.delay(0);
 						}
 					}
 				}));
@@ -478,7 +482,10 @@ cards.spy = new Class({
 					else {
 						h.player.discard(card);
 					}
-					if(!last) {
+					if(last) {
+						done();
+					}
+					else {
 						next.delay(0);
 					}
 					return false;
@@ -666,7 +673,7 @@ cards.cellar = new Class({
 					count++;
 				}
 				else {
-					turn.handler.message('You don\'t have this card\n');
+					turn.handler.message('you don\'t have this card\n');
 				}
 				return true;
 			}
@@ -729,8 +736,62 @@ cards.militia = new Class({
 	Extends: Card,
 	name: 'militia',
 	description: '+2 Treasure\nEach other player discards down to 3 cards in his hand.',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		turn.setTreasure(2);
+		if(turn.game.handlers.length > 1) {
+			var start = turn.game.currentPlayer;
+			var i = start;
+			var next = function() {
+				i = (i + 1) % (turn.game.handlers.length);
+				if(i == start) {
+					done();
+					return;
+				}
+				var h = turn.game.handlers[i];
+				if(h.player.hand.length > 3) {
+					if(h.player.playsMoat(function(moat) {
+						if(moat) {
+							next.delay(0);
+						}
+						else {
+							var choose = function(cardname) {
+								var ret;
+								if(!h.player.hand.some(function(card) {
+									if(card.name == cardname) {
+										h.player.discardCard(card);
+										if(h.player.hand.length > 3) {
+											ret = true;
+										}
+										else {
+											ret = false;
+											next.delay(0);
+										}
+										return true;
+									}
+								}, this)) {
+									h.nextData = choose;
+									h.message('you don\'t have that card');
+									return true;
+								}
+								return ret;
+							};
+							h.nextData = choose;
+							h.message('you must discard cards until you have only 3');
+							h.show(['show', 'hand']);
+						}
+					}));
+				}
+				else {
+					next.delay(0);
+				}
+			}
+			next();
+		}
+	}
 });
+
+actionCards.push(cards.militia);
 
 cards.bureaucrat = new Class({
 	Extends: Card,
@@ -738,31 +799,171 @@ cards.bureaucrat = new Class({
 	description: 'Gain a Silver card; put it on top of your deck.\n'
 		+ 'Each other player reveals a Victory card from his hand and puts it on his deck '
 		+ '(or reveals a hand with no Victory cards)',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		if(turn.game.deck.has('silver')) {
+			turn.addtodeck(turn.game.deck.take('silver'))
+		}
+		if(turn.game.handlers.length > 1) {
+			var start = turn.game.currentPlayer;
+			var i = start;
+			var next = function() {
+				i = (i + 1) % (turn.game.handlers.length);
+				if(i == start) {
+					done();
+					return;
+				}
+				var h = turn.game.handlers[i];
+				if(h.player.hand.some(function(card) {
+					return card.getPoints || card.points > 0;
+				})) { 				
+					if(h.player.playsMoat(function(moat) {
+						if(!moat) {
+							h.player.hand.some(function(card) {
+								if(card.getPoints || card.points > 0) {
+									h.player.addtodeck(card);
+								}
+							});
+						}
+						next.delay(0);
+					}));
+				}
+				else {
+					next.delay(0);
+				}
+			}
+			next();
+		}
+	}
 });
+
+actionCards.push(cards.bureaucrat);
 
 cards.throneroom = new Class({
 	Extends: Card,
 	name: 'throneroom',
 	description: 'Choose an Action card in your hand.\nPlay it twice.',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var selectcard = function(cardname) {
+			if(cardname != 'skip') {
+				if(turn.player.hand.some(function(card) {
+					if(card.name == cardname && card.doAction && card != this) {
+						card.doAction(turn, function() {
+							card.doAction(turn, function() {
+								done();
+							});
+						});
+						return true;
+					}
+				}, this)) {
+					return false;
+				}
+				else {
+					turn.handler.message('this card in unavailable\n');
+					return true;
+				}
+			}
+			else {
+				done();
+				return false;
+			}
+		};
+		turn.handler.nextData = selectcard;
+		turn.handler.message('what card do you want to play twice');
+	}
 });
+
+actionCards.push(cards.throneroom);
 
 cards.library = new Class({
 	Extends: Card,
 	name: 'library',
 	description: 'Draw until you have 7 cards in hand.\nYou may set aside any Action cards '
 		+ 'drawn this way, as you draw them; discard the set aside cards after you finish drawing.',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var lib = function() {
+			if(turn.player.hand.length < 7) {
+				c = turn.player.reveal();
+				if(c.doAction) {
+					var ask = function(reply) {
+						if(reply == 'keep') {
+							turn.player.addtohand(c, true);
+						}
+						else {
+							turn.player.discardCard(c, true);
+						}
+						lib.delay(0);
+					};
+					turn.handler.message('do you want to keep or discard ' + c.name + '\n');
+					turn.handler.nextData = ask;
+				}
+				else {
+					turn.player.addtohand(c, true);
+					lib.delay(0);
+				}
+			}
+			else {
+				done();
+			}
+		};
+	}
 });
+
+actionCards.push(cards.library);
 
 cards.mine = new Class({
 	Extends: Card,
 	name: 'mine',
 	description: 'Trash a Treasure card from your hand. Gain a treasure card costing up to 3 Treasure more; '
 		+ 'put it into your hand',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var cost;
+		var gain = function(cardname) {
+			if(cardname != 'skip') {
+				if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= cost && turn.game.deck.isTreasure(cardname)) {
+					turn.player.addtohand(turn.game.deck.take(cardname));
+					done();
+					return false;
+				}
+				else {
+					turn.handler.message('you can\'t gain that card\n');
+					return true;
+				}
+			}
+			else {
+				done();
+			}
+			return false;
+		};
+		var ask = function(cardname) {
+			if(cardname != 'skip') {
+				if(!turn.player.hand.some(function(card) {
+					if(card.name == cardname && card.treasure > 0) {
+						turn.player.trash(card);
+						cost = card.cost + 3;
+						turn.handler.message('which treasure card do you want to gain\n');
+						turn.handler.nextData = gain;
+						return true;
+					}
+				})) {
+					turn.handler.message('you don\'t have a that card\n');
+					return true;
+				} 
+			}
+			else {
+				done();
+			}
+			return false;
+		};
+		turn.handler.message('which treasure card do you want to discard\n');
+		turn.handler.nextData = ask;
+	}
 });
+
+actionCards.push(cards.mine);
 
 cards.smithy = new Class({
 	Extends: Card,
