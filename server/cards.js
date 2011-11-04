@@ -249,7 +249,7 @@ cards.thief = new Class({
 		+ 'If they revealed any Treasure cards, they one of them that you choose\n'
 		+ 'You may gain any or all of these trashed cards. '
 		+ 'They discard any other revealed cards.',
-	cost: 0,
+	cost: 4,
 	doAction: function(turn, done) {
 		if(turn.game.handlers.length > 1) {
 			var start = turn.game.currentPlayer;
@@ -261,58 +261,65 @@ cards.thief = new Class({
 					return;
 				}
 				var h = turn.game.handlers[i];
-				var card1 = h.player.reveal();
-				if(card1.treasure == 0) {
-					h.player.gain(card1, true);
-					card1 = null;
-				}
-				var card2 = h.player.reveal();
-				if(card2.treasure == 0) {
-					h.player.gain(card2, true);
-					card2 = null;
-				}
-				var read = function(card) {
-					if(card == 'skip') {
+				h.player.playsMoat(function(moat) {
+					if(moat) {
 						next.delay(0);
-						return false;
 					}
 					else {
-						if(card1 && card1.name == card) {
-							turn.player.gain(card1);
+						var card1 = h.player.reveal();
+						if(card1.treasure == 0) {
+							h.player.gain(card1, true);
 							card1 = null;
 						}
-						else if(card2 && card2.name == card) {
-							turn.player.gain(card2);
+						var card2 = h.player.reveal();
+						if(card2.treasure == 0) {
+							h.player.gain(card2, true);
 							card2 = null;
 						}
+						var read = function(card) {
+							if(card == 'skip') {
+								next.delay(0);
+								return false;
+							}
+							else {
+								if(card1 && card1.name == card) {
+									turn.player.gain(card1);
+									card1 = null;
+								}
+								else if(card2 && card2.name == card) {
+									turn.player.gain(card2);
+									card2 = null;
+								}
+								else {
+									turn.handler.message('you can\'t gain this card\n');
+									return true;
+								}
+								if(card1) {
+									turn.game.deck.trash(card1);
+								}
+								if(card2) {
+									turn.game.deck.trash(card2);
+								}
+								next.delay(0);
+								return false;
+							}
+						};
+						if(card1 && card2) {
+							turn.handler.message('you can gain either ' + card1.name + ' or ' + card2.name + ' or skip\n');
+						}
+						else if(card1) {
+							turn.handler.message('you can gain either ' + card1.name + ' or skip\n');
+						}
+						else if(card2) {
+							turn.handler.message('you can gain either ' + card2.name + ' or skip\n');
+						}
 						else {
-							turn.handler.message('you can\'t gain this card\n');
-							return true;
+							next.delay(0);
+							return;
 						}
-						if(card1) {
-							turn.game.deck.trash(card1);
-						}
-						if(card2) {
-							turn.game.deck.trash(card2);
-						}
-						next.delay(0);
-						return false;
+						turn.handler.nextData = read;
 					}
-				};
-				if(card1 && card2) {
-					turn.handler.message('you can gain either ' + card1.name + ' or ' + card2.name + ' or skip\n');
-				}
-				else if(card1) {
-					turn.handler.message('you can gain either ' + card1.name + ' or skip\n');
-				}
-				else if(card2) {
-					turn.handler.message('you can gain either ' + card2.name + ' or skip\n');
-				}
-				else {
-					next.delay(0);
-					return;
-				}
-				turn.handler.nextData = read;
+				});
 			}
 			next();
 		}
@@ -419,18 +426,31 @@ cards.witch = new Class({
 		if(turn.game.handlers.length > 1) {
 			var start = turn.game.currentPlayer;
 			var i = (start + 1) % (turn.game.handlers.length);
-			do {
-				if(turn.game.deck.has('curse')) {
-					turn.game.handlers[i].player.gain(turn.game.deck.take('curse'));
-				}
-				else {
-					break;
-				}
-				i = (i + 1) % (turn.game.handlers.length);
+			var next = function() {
+				if(turn.game.handlers[i].player.playsMoat(function(moat) {
+					if(moat) {
+						i = (i + 1) % (turn.game.handlers.length);
+						next.delay(0);
+					}
+					else {
+						if(turn.game.deck.has('curse')) {
+							turn.game.handlers[i].player.gain(turn.game.deck.take('curse'));
+						}
+						else {
+							break;
+						}
+						i = (i + 1) % (turn.game.handlers.length);
+						if(i != start) {
+							next.delay(0);
+						}
+						else {
+							done();
+						}
+					}
+				}));
 			}
-			while(i != start);
+			next();
 		}
-		done();
 	}
 });
 
@@ -441,61 +461,244 @@ cards.spy = new Class({
 	name: 'spy',
 	description: '+1 Card\n+1 Action\nEach player including you reveals the top '
 		+ 'card of his deck and either discards or puts it back, your choice',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var start = turn.game.currentPlayer;
+		var i = start;
+		var last = false;
+		var next = function() {
+			i = (i + 1) % (turn.game.handlers.length);
+			if(i == start) {
+				last = true;
+			}
+			var spy = function() {
+				var h = turn.game.handlers[i];
+				var card = h.player.reveal(true);
+				var read = function(action) {
+					if(action == 'keep') {
+						h.player.addtodeck(card);
+					}
+					else {
+						h.player.discard(card);
+					}
+					if(!last) {
+						next.delay(0);
+					}
+					return false;
+				};
+				if(last) {
+					turn.handler.message('should ' + h.player.name + ' keep or discard ' + card.name + '\n');
+				}
+				else {
+					turn.handler.message('do you want to keep or discard ' + card.name + '\n');
+				}
+				turn.handler.nextData = read;
+			};
+			if(last) {
+				spy();
+			}
+			else {
+				h.player.playsMoat(function(moat) {
+					if(moat) {
+						next.delay(0);
+					}
+					else {
+						spy();
+					}
+				});
+			}
+		}
+		next();
+	}
 });
+
+actionCards.push(cards.spy);
 
 cards.chanceller = new Class({
 	Extends: Card,
 	name: 'chanceller',
 	description: '+2 Treasure\hYou may immedietly put your deck into your discard pile.',
-	cost: 3
+	cost: 3,
+	doAction: function(turn, done) {
+		turn.addTreasure(2);
+		var read = function(action) {
+			if(action == 'discard' || action == 'yes') {
+				h.player.shuffle();
+			}
+			done();
+			return false;
+		}
+		turn.handler.message('do you want to discard your deck\n');
+		turn.handler.nextData = read;
+	}
 });
+
+actionCards.push(cards.chanceller);
 
 cards.workshop = new Class({
 	Extends: Card,
 	name: 'workshop',
 	description: 'Gain a card costing up to 4 Treasure',
-	cost: 3
+	cost: 3,
+	doAction: function(turn, done) {
+		var read = function(cardname) {
+			if(cardname != 'skip') {
+				if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= 4) {
+					turn.player.gain(turn.game.deck.take(cardname));
+				}
+				else {
+					turn.handler.message('that card is unavailable\n');
+					return true;
+				}
+			}
+			done();
+			return false;
+		}
+		turn.handler.message('what do you want to gain\n');
+		turn.handler.nextData = read;
+	}
 });
+
+actionCards.push(cards.workshop);
 
 cards.adventurer = new Class({
 	Extends: Card,
 	name: 'adventurer',
 	description: 'Reveal cards from your deck until you reveal 2 Treasure cards.\n'
 		+ 'Put these treasure cards into your hand and discard the other revealed cards.',
-	cost: 6
+	cost: 6,
+	doAction: function(turn, done) {
+		var c, count = 0;
+		do {
+			c = turn.player.reveal();
+			count = 0;
+			if(c.treasure > 0) {
+				count++;
+				turn.player.addtohand(c, true);
+			}
+			else {
+				turn.player.gain(c, true);
+			}
+		}
+		while(count < 2);
+		done();
+	}
 });
+
+actionCards.push(cards.adventurer);
 
 cards.remodel = new Class({
 	Extends: Card,
 	name: 'remodel',
 	description: 'Trash a card from your hand.\nGain a card costing up to 2 Treasure more '
 		+ 'than the trashed card.',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var cost;
+		var trash = function(cardname) {
+			if(cardname != 'skip') {
+				if(!turn.player.hand.some(function(card) { 
+					if(card.name == cardname && card != this) {
+						turn.player.trash(card);
+						turn.game.deck.trash(card);
+						cost = card.cost + 2;
+						turn.handler.message('what do you want to gain, costing up to ' + cost + '\n');
+						turn.handler.nextData = buy;
+					}
+				}, this)) {
+					turn.handler.message('that card is unavailable\n');
+					return true;
+				}
+			}
+			return false;
+		};
+		var buy = function(cardname) {
+			if(cardname != 'skip') {
+				if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= cost) {
+					turn.player.gain(turn.game.deck.take(cardname));
+				}
+				else {
+					turn.handler.message('that card is unavailable\n');
+					return true;
+				}
+			}
+			done();
+			return false;
+		};
+		turn.handler.message('what do you want to trash\n');
+		turn.handler.nextData = trash;
+	}
 });
+
+actionCards.push(cards.remodel);
 
 cards.councilroom = new Class({
 	Extends: Card,
 	name: 'councilroom',
 	description: '+4 Cards\n+1 Buy\nEach other player draws a card',
-	cost: 5
+	cost: 5,
+	doAction: function(turn, done) {
+		turn.player.draw(4);
+		turn.game.handlers.each(function(h) {
+			if(h != turn.handler) {
+				h.player.draw(1);
+			}
+		});
+		done();
+	}
 });
+
+actionCards.push(cards.councilroom);
 
 cards.cellar = new Class({
 	Extends: Card,
 	name: 'cellar',
 	description: '+1 Action\n Discard any number of cards.\n'
 		+ '+1 Card per card discarded.',
-	cost: 2
+	cost: 2,
+	doAction: function(turn, done) {
+		var count = 0;
+		var selectcard = function(cardname) {
+			if(cardname != 'skip') {
+				if(turn.player.hand.some(function(card) {
+					if(card.name == cardname && card != this) {
+						turn.player.discardCard(card);
+						return true;
+					}
+				}, this)) {
+					count++;
+				}
+				else {
+					turn.handler.message('You don\'t have this card\n');
+				}
+				return true;
+			}
+			else {
+				turn.player.draw(count);
+				done();
+				return false;
+			}
+		};
+		turn.handler.nextData = selectcard;
+		turn.handler.message('which cards do you want to discard\nType skip if you are finished choosing');
+	}
 });
+
+actionCards.push(cards.cellar);
 
 cards.moat = new Class({
 	Extends: Card,
 	name: 'moat',
 	description: '+2 Cards\nWhen another player plays an Attack card, you may\n'
 		+ 'reveal this from your hand. If you do, you are unaffected by that Attack.',
-	cost: 2
+	cost: 2,
+	doAction: function(turn, done) {
+		turn.player.draw(2);
+		done();
+	}
 });
+
+actionCards.push(cards.moat);
 
 cards.village = new Class({
 	Extends: Card,

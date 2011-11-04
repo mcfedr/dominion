@@ -15,12 +15,17 @@ var Player = exports.Player = new Class({
 	
 	shuffle: function() {
 		this.shuffles++;
+		this.deck.each(function(c) {
+			this.discard.push(c);
+		});
+		this.deck = [];
 		var i;
 		do {
 			i = Math.floor(Math.random() * this.discard.length);
 			this.deck.push(this.discard.splice(i, 1)[0]);
 		}
 		while(this.discard.length > 0);
+		this.handler.message('you shuffled your cards\n');
 	},
 	
 	gain: function(card, quiet) {
@@ -28,6 +33,14 @@ var Player = exports.Player = new Class({
 		if(!quiet) {
 			this.handler.message('you gained a ' + card.name + '\n');
 			this.handler.game.message(this.name + ' gained a ' + card.name + '\n', this.handler);
+		}
+	},
+	
+	addtodeck: function(card, quiet) {
+		this.deck.push(card);
+		if(!quiet) {
+			this.handler.message('you decked a ' + card.name + '\n');
+			this.handler.game.message(this.name + ' decked a ' + card.name + '\n', this.handler);
 		}
 	},
 	
@@ -55,6 +68,13 @@ var Player = exports.Player = new Class({
 		}
 	},
 	
+	addtohand: function(card, quiet) {
+		this.hand.push(card);
+		if(!quiet) {
+			this.handler.message('you drew a ' + c.name + '\n');
+		}
+	},
+	
 	play: function(card) {
 		this.hand.erase(card);
 		this.table.push(card);
@@ -69,8 +89,35 @@ var Player = exports.Player = new Class({
 		this.handler.game.message(this.name + ' trashed a ' + card.name + '\n', this.handler);
 	},
 	
+	discardCard: function(card) {
+		this.hand.erase(card);
+		this.discard.push(card);
+		this.handler.message('you discarded a ' + card.name + '\n');
+		this.handler.game.message(this.name + ' discarded a ' + card.name + '\n', this.handler);
+	},
+	
 	cards: function() {
 		return this.deck.concat(this.discard).concat(this.hand).concat(this.table);
+	},
+	
+	playsMoat: function(cb) {
+		if(!this.hand.some(function(card) {
+			if(card.name == 'moat') {
+				this.handler.nextData = function(reply) {
+					if(reply == 'yes') {
+						cb(true);
+					}
+					else {
+						cb(false);
+					}
+				};
+				this.handler.message('do you want to play your moat\n');
+				return true;
+			}
+			return false;
+		}, this)) {
+			cb(false);
+		}
 	},
 	
 	discardHand: function() {
