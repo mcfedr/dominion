@@ -30,7 +30,7 @@ var Game = new Class({
 		while(tmp.length > 0);
 		
 		this.deck = new cards.Deck(this.handlers.length);
-		this.message(this.deck.describe() + '\n');
+		this.message(this.deck.describe());
 		
 		//deal
 		this.handlers.each(function(h) {
