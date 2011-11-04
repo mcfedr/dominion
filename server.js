@@ -113,6 +113,12 @@ var Game = new Class({
 		return false;
 	},
 	
+	checkStart: function() {
+		if(this.handlers.length == 4) {
+			this.start.delay(0, this);
+		}
+	},
+	
 	checkEnd: function() {
 		if(this.deck.shouldEnd()) {
 			var winner = 'nobody', winningScore = 0;
@@ -310,6 +316,7 @@ var PlayerHandler = new Class({
 			this.message('welcome ' + this.player.name + '\n'
 				+ 'you have joined game ' + this.game.gamenum+ '\n'
 				+ 'type help for a list of commands\n\n');
+			this.game.checkStart();
 			return false;
 		};
 		

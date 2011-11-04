@@ -69,16 +69,7 @@ var Player = exports.Player = new Class({
 	
 	score: function() {
 		var s = 0;
-		this.deck.each(function(c) {
-			s += (c.getPoints ? c.getPoints(this) : c.points);
-		}, this);
-		this.discard.each(function(c) {
-			s += (c.getPoints ? c.getPoints(this) : c.points);
-		}, this);
-		this.hand.each(function(c) {
-			s += (c.getPoints ? c.getPoints(this) : c.points);
-		}, this);
-		this.table.each(function(c) {
+		this.cards().each(function(c) {
 			s += (c.getPoints ? c.getPoints(this) : c.points);
 		}, this);
 		return s;
