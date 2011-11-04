@@ -96,7 +96,7 @@ var Game = new Class({
 			else if(commands[1] == 'players') {
 				this.handlers.each(function(h) {
 					if(h.player) {
-						this.message(h.player.name + '\n');
+						handler.message(h.player.name + '\n');
 					}
 				}, this);
 				return true;
