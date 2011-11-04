@@ -321,7 +321,7 @@ var PlayerHandler = new Class({
 			return false;
 		};
 		
-		this.message("hi\nwhat is your name?\n");
+		this.message("hello\nwhat is your name?\n");
 	},
 	
 	data: function(data) {
