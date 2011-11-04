@@ -35,10 +35,10 @@ var Game = new Class({
 		//deal
 		this.handlers.each(function(h) {
 			for(var i = 0;i < 3;i++) {
-				h.player.gain(this.deck.take('estate'));
+				h.player.gain(this.deck.take('estate'), true);
 			}
 			for(i = 0;i< 7;i++) {
-				h.player.gain(this.deck.take('copper'));
+				h.player.gain(this.deck.take('copper'), true);
 			}
 			h.player.draw();
 		}, this);
@@ -211,6 +211,21 @@ var Turn = new Class({
 						+ 'buys: ' + this.buys + '\n'
 						+ 'cash: ' + this.cash() + '\n');
 					return true;
+				case 'canbuy':
+					var cash = this.cash();
+					var some = false;
+					Object.each(this.game.deck.cards, function(cards, name) {
+						if(cards.length > 0) {
+							if(cards[0].cost < cash) {
+								this.handler.message(name + ' (' + cards[0].cost + ')\n');
+								some = true;
+							}
+						}
+					}, this);
+					if(!some) {
+						this.handler.message('you can\'t afford anything\n');
+					}
+					return true;
 			}
 		}
 		else if(command[0] == 'buy') {
@@ -306,12 +321,12 @@ var Turn = new Class({
 	
 	end: function() {
 		clearTimeout(this.timeout);
+		this.handler.message('your turn has finished\n');
+		this.game.message(this.player.name + ' has finished his turn\n', this.handler);
 		this.ended = true;
 		this.player.discardHand();
 		this.player.draw();
 		this.handler.turn = null;
-		this.handler.message('your turn has finished\n');
-		this.game.message(this.player.name + ' has finished his turn\n', this.handler);
 		this.after.delay(0);
 	}
 });
