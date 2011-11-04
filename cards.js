@@ -1,5 +1,7 @@
 require('mootools');
 
+var cards = {};
+
 var Card = new Class({
 	name: 'blank',
 	description: 'blank',
@@ -13,39 +15,39 @@ exports.Deck = new Class({
 	trashed: [],
 	
 	initialize: function(players) {
-		for(var i = 0;i < 50;i++) {
-			this.add(new exports.copper());
+		for(var i = 0;i < 60;i++) {
+			this.add(new cards.copper());
 		}
 		for(i = 0;i < 40;i++) {
-			this.add(new exports.silver());
+			this.add(new cards.silver());
 		}
 		for(i = 0;i < 30;i++) {
-			this.add(new exports.gold());
+			this.add(new cards.gold());
 		}
 	
 		var curses = 30
 			victories = 12;
 		if(players <= 2) {
 			curses = 10;
-			victories = 12;
+			victories = 8;
 		}
 		else if(players = 3) {
 			curses = 20;
 		}
 	
 		for(i = 0;i < curses;i++) {
-			this.add(new exports.curse());
+			this.add(new cards.curse());
 		}
 		
 		for(i = 0;i < victories;i++) {
-			this.add(new exports.estate());
-			this.add(new exports.duchy());
-			this.add(new exports.province());
+			this.add(new cards.estate());
+			this.add(new cards.duchy());
+			this.add(new cards.province());
 		}
 		
 		//plus 3 for each player
 		for(i = 0;i < players * 3;i++) {
-			this.add(new exports.estate());
+			this.add(new cards.estate());
 		}
 		
 		//10 random actions
@@ -122,16 +124,24 @@ exports.Deck = new Class({
 	}
 });
 
+exports.describe = function(card) {
+	if(cards[card]) {
+		var c = new cards[card]();
+		return c.name + ' (' + c.cost + ')\n' + c.description;
+	}
+	return false;
+};
+
 var actionCards = [];
 
-exports.copper = new Class({
+cards.copper = new Class({
 	Extends: Card,
 	name: 'copper',
 	description: '1 Treasure',
 	treasure: 1
 });
 
-exports.silver = new Class({
+cards.silver = new Class({
 	Extends: Card,
 	name: 'silver',
 	description: '2 Treasure',
@@ -139,7 +149,7 @@ exports.silver = new Class({
 	treasure: 2
 });
 
-exports.gold = new Class({
+cards.gold = new Class({
 	Extends: Card,
 	name: 'gold',
 	description: '3 Treasure',
@@ -147,7 +157,7 @@ exports.gold = new Class({
 	treasure: 3
 });
 
-exports.estate = new Class({
+cards.estate = new Class({
 	Extends: Card,
 	name: 'estate',
 	description: '1 Victory Point',
@@ -155,7 +165,7 @@ exports.estate = new Class({
 	points: 1
 });
 
-exports.duchy = new Class({
+cards.duchy = new Class({
 	Extends: Card,
 	name: 'duchy',
 	description: '3 Victory Points',
@@ -163,7 +173,7 @@ exports.duchy = new Class({
 	points: 3
 });
 
-exports.province = new Class({
+cards.province = new Class({
 	Extends: Card,
 	name: 'province',
 	description: '6 Victory Points',
@@ -171,17 +181,17 @@ exports.province = new Class({
 	points: 6
 });
 
-exports.gardens = new Class({
+cards.gardens = new Class({
 	Extends: Card,
 	name: 'gardens',
 	description: '1 Victory point for every 10 cards in your deck (rounded down)',
 	cost: 4,
 	getPoints: function(player) {
-		return Math.floor(player.cards.length / 10);
+		return Math.floor(player.cards().length / 10);
 	}
 });
 
-exports.curse = new Class({
+cards.curse = new Class({
 	Extends: Card,
 	name: 'curse',
 	description: '-1 Victory Point',
@@ -189,23 +199,22 @@ exports.curse = new Class({
 	points: -1
 });
 
-exports.chapel = new Class({
+cards.chapel = new Class({
 	Extends: Card,
 	name: 'chapel',
 	description: 'Trash up to 4 cards from your hand',
 	cost: 2,
 	doAction: function(turn, done) {
 		var count = 0;
-		
-		var selectcard = function(card) {
-			if(card != 'done') {
-				if(turn.player.hand.some(function(hcard) {
-					if(!hcard.played && hcard.card.name == card) {
-						turn.player.trash(hcard.card);
-						turn.game.deck.trash(hcard.card);
+		var selectcard = function(cardname) {
+			if(card != 'skip') {
+				if(turn.player.hand.some(function(card) {
+					if(card.name == cardname && card != this) {
+						turn.player.trash(card);
+						turn.game.deck.trash(card);
 						return true;
 					}
-				})) {
+				}, this)) {
 					count++;
 				}
 				else {
@@ -221,35 +230,108 @@ exports.chapel = new Class({
 			}
 			else {
 				done(true);
+				return false;
 			}
 		};
 		turn.handler.nextData = selectcard;
-		turn.handler.message('Choose up to 4 cards to trash\nType done when you are finished choosing');
+		turn.handler.message('Choose up to 4 cards to trash\nType skip if you are finished choosing');
 	}
 });
 
-actionCards.push(exports.chapel);
+actionCards.push(cards.chapel);
 
-exports.thief = new Class({
+cards.thief = new Class({
 	Extends: Card,
 	name: 'thief',
 	description: 'Each other player revels the top 2 cards of his deck\n'
 		+ 'If they revealed any Treasure cards, they one of them that you choose\n'
 		+ 'You may gain any or all of these trashed cards. '
 		+ 'They discard any other revealed cards.',
-	cost: 4
+	cost: 0,
+	doAction: function(turn, done) {
+		if(turn.game.handlers.length > 1) {
+			var start = turn.game.currentPlayer;
+			var i = start;
+			var next = function() {
+				i = (i + 1) % (turn.game.handlers.length);
+				if(i == start) {
+					done(true);
+					return;
+				}
+				var h = turn.game.handlers[i];
+				var card1 = h.player.reveal();
+				if(card1.treasure == 0) {
+					h.player.gain(card1);
+					card1 = null;
+				}
+				var card2 = h.player.reveal();
+				if(card2.treasure == 0) {
+					card2 = h.player.gain(card1);
+					card2 = null;
+				}
+				var read = function(card) {
+					if(card == 'skip') {
+						next.delay(0);
+						return false;
+					}
+					else {
+						if(card1 && card1.name == card) {
+							turn.player.gain(card1);
+							card1 = null;
+						}
+						else if(card2 && card2.name == card) {
+							turn.player.gain(card2);
+							card2 = null;
+						}
+						else {
+							turn.handler.message('you can\'t gain this card\n');
+							return true;
+						}
+						if(card1) {
+							turn.game.deck.trash(card1);
+						}
+						if(card2) {
+							turn.game.deck.trash(card2);
+						}
+						next.delay(0);
+						return false;
+					}
+				};
+				if(card1 && card2) {
+					turn.handler.message('you can gain either ' + card1.name + ' or ' + card2.name + ' or skip\n');
+				}
+				else if(card1) {
+					turn.handler.message('you can gain either ' + card1.name + ' or skip\n');
+				}
+				else if(card2) {
+					turn.handler.message('you can gain either ' + card2.name + ' or skip\n');
+				}
+				else {
+					next.delay(0);
+					return;
+				}
+				turn.handler.nextData = read;
+			}
+			next();
+		}
+		else {
+			done();
+		}
+	}
 });
 
-exports.moneylender = new Class({
+actionCards.push(cards.thief);
+
+cards.moneylender = new Class({
 	Extends: Card,
 	name: 'moneylender',
 	description: 'Trash a copper from your hand\nIf you do, + 3 Treasure',
 	cost: 4,
 	doAction: function(turn, done) {
-		if(turn.player.hand.some(function(hcard) {
-			if(!hcard.played && hcard.card.name == 'copper') {
-				turn.player.trash(hcard.card);
-				turn.game.deck.trash(hcard.card);
+		if(turn.player.hand.some(function(card) {
+			if(card.name == 'copper') {
+				turn.player.trash(card);
+				turn.game.deck.trash(card);
 				return true;
 			}
 		})) {
@@ -257,21 +339,46 @@ exports.moneylender = new Class({
 			done();
 		}
 		else {
-			turn.handler.message('You don\'t have a copper\n');
+			turn.handler.message('you don\'t have a copper\n');
 		}
 	}
 });
 
-actionCards.push(exports.moneylender);
+actionCards.push(cards.moneylender);
 
-exports.feast = new Class({
+cards.feast = new Class({
 	Extends: Card,
 	name: 'feast',
 	description: 'Trash this card.\n Gain a card costing up to 5 Treasure',
-	cost: 4
+	cost: 4,
+	doAction: function(turn, done) {
+		var selectcard = function(card) {
+			if(card != 'done') {
+				if(turn.game.deck.has(card) && turn.game.deck.cost(card) <= 5) {
+					turn.handler.player.gain(turn.game.deck.take(card));
+					done(true);
+					return false;
+				}
+				else {
+					turn.handler.message('card not available\n');
+					return true;
+				}
+			}
+			else {
+				done(true);
+				return false;
+			}
+		};
+		turn.player.trash(this);
+		turn.game.deck.trash(this);
+		turn.handler.nextData = selectcard;
+		turn.handler.message('choose a card costing up to 5 Treasure');
+	}
 });
 
-exports.festival = new Class({
+actionCards.push(cards.feast);
+
+cards.festival = new Class({
 	Extends: Card,
 	name: 'festival',
 	description: '+2 Actions\n+1 Buy\n+2 Treasure',
@@ -284,9 +391,9 @@ exports.festival = new Class({
 	}
 });
 
-actionCards.push(exports.festival);
+actionCards.push(cards.festival);
 
-exports.laboratory = new Class({
+cards.laboratory = new Class({
 	Extends: Card,
 	name: 'laboratory',
 	description: '+2 Cards\n+1 Action',
@@ -298,32 +405,36 @@ exports.laboratory = new Class({
 	}
 });
 
-actionCards.push(exports.laboratory);
+actionCards.push(cards.laboratory);
 
-exports.witch = new Class({
+cards.witch = new Class({
 	Extends: Card,
 	name: 'witch',
 	description: '+2 Cards\nEach other player gains a Curse card',
 	cost: 5,
 	doAction: function(turn, done) {
 		turn.player.draw(2);
-		turn.game.handlers.every(function(h) {
-			if(h == turn.handler) {
-				return true;
+		if(turn.game.handlers.length > 1) {
+			var start = turn.game.currentPlayer;
+			var i = (start + 1) % (turn.game.handlers.length);
+			do {
+				if(turn.game.deck.has('curse')) {
+					turn.game.handlers[i].player.gain(turn.game.deck.take('curse'));
+				}
+				else {
+					break;
+				}
+				i = (i + 1) % (turn.game.handlers.length);
 			}
-			if(turn.game.deck.has('curse')) {
-				h.player.gain(this.game.deck.take('curse'));
-				return true;
-			}
-			return false;
-		});
+			while(i != start);
+		}
 		done();
 	}
 });
 
-actionCards.push(exports.witch);
+actionCards.push(cards.witch);
 
-exports.spy = new Class({
+cards.spy = new Class({
 	Extends: Card,
 	name: 'spy',
 	description: '+1 Card\n+1 Action\nEach player including you reveals the top '
@@ -331,21 +442,21 @@ exports.spy = new Class({
 	cost: 4
 });
 
-exports.chanceller = new Class({
+cards.chanceller = new Class({
 	Extends: Card,
 	name: 'chanceller',
 	description: '+2 Treasure\hYou may immedietly put your deck into your discard pile.',
 	cost: 3
 });
 
-exports.workshop = new Class({
+cards.workshop = new Class({
 	Extends: Card,
 	name: 'workshop',
 	description: 'Gain a card costing up to 4 Treasure',
 	cost: 3
 });
 
-exports.adventurer = new Class({
+cards.adventurer = new Class({
 	Extends: Card,
 	name: 'adventurer',
 	description: 'Reveal cards from your deck until you reveal 2 Treasure cards.\n'
@@ -353,7 +464,7 @@ exports.adventurer = new Class({
 	cost: 6
 });
 
-exports.remodel = new Class({
+cards.remodel = new Class({
 	Extends: Card,
 	name: 'remodel',
 	description: 'Trash a card from your hand.\nGain a card costing up to 2 Treasure more '
@@ -361,14 +472,14 @@ exports.remodel = new Class({
 	cost: 4
 });
 
-exports.councilroom = new Class({
+cards.councilroom = new Class({
 	Extends: Card,
 	name: 'councilroom',
 	description: '+4 Cards\n+1 Buy\nEach other player draws a card',
 	cost: 5
 });
 
-exports.cellar = new Class({
+cards.cellar = new Class({
 	Extends: Card,
 	name: 'cellar',
 	description: '+1 Action\n Discard any number of cards.\n'
@@ -376,7 +487,7 @@ exports.cellar = new Class({
 	cost: 2
 });
 
-exports.moat = new Class({
+cards.moat = new Class({
 	Extends: Card,
 	name: 'moat',
 	description: '+2 Cards\nWhen another player plays an Attack card, you may\n'
@@ -384,7 +495,7 @@ exports.moat = new Class({
 	cost: 2
 });
 
-exports.village = new Class({
+cards.village = new Class({
 	Extends: Card,
 	name: 'village',
 	description: '+1 Card\n+2 Actions',
@@ -396,9 +507,9 @@ exports.village = new Class({
 	}
 });
 
-actionCards.push(exports.village);
+actionCards.push(cards.village);
 
-exports.woodcutter = new Class({
+cards.woodcutter = new Class({
 	Extends: Card,
 	name: 'woodcutter',
 	description: '+1 Buy\n+2 Treaure',
@@ -410,16 +521,16 @@ exports.woodcutter = new Class({
 	}
 });
 
-actionCards.push(exports.woodcutter);
+actionCards.push(cards.woodcutter);
 
-exports.militia = new Class({
+cards.militia = new Class({
 	Extends: Card,
 	name: 'militia',
 	description: '+2 Treasure\nEach other player discards down to 3 cards in his hand.',
 	cost: 4
 });
 
-exports.bureaucrat = new Class({
+cards.bureaucrat = new Class({
 	Extends: Card,
 	name: 'bureaucrat',
 	description: 'Gain a Silver card; put it on top of your deck.\n'
@@ -428,14 +539,14 @@ exports.bureaucrat = new Class({
 	cost: 4
 });
 
-exports.throneroom = new Class({
+cards.throneroom = new Class({
 	Extends: Card,
 	name: 'throneroom',
 	description: 'Choose an Action card in your hand.\nPlay it twice.',
 	cost: 4
 });
 
-exports.library = new Class({
+cards.library = new Class({
 	Extends: Card,
 	name: 'library',
 	description: 'Draw until you have 7 cards in hand.\nYou may set aside any Action cards '
@@ -443,7 +554,7 @@ exports.library = new Class({
 	cost: 4
 });
 
-exports.mine = new Class({
+cards.mine = new Class({
 	Extends: Card,
 	name: 'mine',
 	description: 'Trash a Treasure card from your hand. Gain a treasure card costing up to 3 Treasure more; '
@@ -451,7 +562,7 @@ exports.mine = new Class({
 	cost: 4
 });
 
-exports.smithy = new Class({
+cards.smithy = new Class({
 	Extends: Card,
 	name: 'smithy',
 	description: '+3 Cards',
@@ -462,9 +573,9 @@ exports.smithy = new Class({
 	}
 });
 
-actionCards.push(exports.smithy);
+actionCards.push(cards.smithy);
 
-exports.market = new Class({
+cards.market = new Class({
 	Extends: Card,
 	name: 'market',
 	description: '+1 Card\n+1 Action\n+1 Buy\n+1 Treasure',
@@ -478,4 +589,4 @@ exports.market = new Class({
 	}
 });
 
-actionCards.push(exports.market);
+actionCards.push(cards.market);

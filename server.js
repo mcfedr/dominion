@@ -8,7 +8,7 @@ var Game = new Class({
 	handlers: [],
 	started: false,
 	ended: false,
-	nextPlayer: -1,
+	currentPlayer: -1,
 	
 	initialize: function() {
 		this.gamenum = gamenum++;
@@ -48,8 +48,8 @@ var Game = new Class({
 	
 	turn: function() {
 		if(this.handlers.length > 0) {
-			this.nextPlayer = (this.nextPlayer + 1) % this.handlers.length;
-			var turn = new Turn(this, this.handlers[this.nextPlayer], this.turn.bind(this));
+			this.currentPlayer = (this.currentPlayer + 1) % this.handlers.length;
+			var turn = new Turn(this, this.handlers[this.currentPlayer], this.turn.bind(this));
 		}
 		else {
 			this.end();
@@ -176,16 +176,16 @@ var Turn = new Class({
 			}
 		}
 		else if(command[0] == 'buy') {
-			card = command[1];
+			cardname = command[1];
 			if(this.buys > 0) {
-				if(this.game.deck.has(card)) {
-					var cost = this.game.deck.cost(card);
+				if(this.game.deck.has(cardname)) {
+					var cost = this.game.deck.cost(cardname);
 					if(cost <= this.cash()) {
 						this.spent += cost;
 						this.buys--;
-						this.player.gain(this.game.deck.take(card));
-						this.handler.message('you bought a ' + card + '\n');
-						this.game.message(this.player.name + ' bought a ' + card + '\n', this.handler);
+						this.player.gain(this.game.deck.take(cardname));
+						this.handler.message('you bought a ' + cardname + '\n');
+						this.game.message(this.player.name + ' bought a ' + cardname + '\n', this.handler);
 						this.checkEnd();
 					}
 					else {
@@ -202,30 +202,25 @@ var Turn = new Class({
 			return true;
 		}
 		else if(command[0] == 'play') {
-			card = command[1];
+			cardname = command[1];
 			if(this.actions > 0) {
-				var hcard;
-				this.player.hand.some(function(hc) {
-					if(!hc.played && hc.card.name == card) {
-						hcard = hc;
+				if(!this.player.hand.some(function(card) {
+					if(card.name == cardname) {
+						if(card.doAction) {
+							this.actions--;
+							this.player.play(card);
+							this.handler.message('you played a ' + cardname + '\n');
+							this.game.message(this.player.name + ' played a ' + cardname + '\n', this.handler);
+							card.doAction(this, function() {
+								this.checkEnd();
+							}.bind(this));
+						}
+						else {
+							this.handler.message(card + ' isn\'t an action card\n');
+						}
 						return true;
 					}
-				});
-				if(hcard) {
-					if(hcard.card.doAction) {
-						hcard.card.doAction(this, function(out) {
-							this.actions--;
-							hcard.played = true;
-							this.handler.message('you played a ' + card + '\n' + (out ? '\n' : ''));
-							this.game.message(this.player.name + ' played a ' + card + '\n', this.handler);
-							this.checkEnd();
-						}.bind(this));
-					}
-					else {
-						this.handler.message(card + ' isn\'t an action card\n');
-					}
-				}
-				else {
+				}, this)) {
 					this.handler.message('you don\'t have this card\n');
 				}
 			}
@@ -239,18 +234,17 @@ var Turn = new Class({
 	
 	cash: function() {
 		var t = this.treasure;
-		this.player.hand.each(function(hcard) {
-			t += hcard.card.treasure;
+		this.player.hand.each(function(card) {
+			t += card.treasure;
 		});
 		return t - this.spent;
 	},
 	
 	checkEnd: function() {
 		if(!this.game.checkEnd()) {
-			var hasActionCard = this.player.hand.some(function(hcard) {
-				return hcard.card.doAction;
-			});
-			if(this.buys == 0 && (!hasActionCard || this.actions == 0)) {
+			if(this.buys == 0 && (this.actions == 0 || !this.player.hand.some(function(card) {
+				return !!card.doAction;
+			}))) {
 				this.end();
 			}
 		}
@@ -287,13 +281,13 @@ var PlayerHandler = new Class({
 			opengame.handlers.push(this);
 			this.game = opengame;
 			console.log(this.player.name + '--connected');
-			this.message('Welcome ' + this.player.name + '\n'
-				+ 'You have joined game ' + this.game.gamenum+ '\n'
-				+ 'Type help for a list of commands\n\n');
+			this.message('welcome ' + this.player.name + '\n'
+				+ 'you have joined game ' + this.game.gamenum+ '\n'
+				+ 'type help for a list of commands\n\n');
 			return false;
 		};
 		
-		this.message("Hi\nWhat is your name?\n");
+		this.message("hi\nwhat is your name?\n");
 	},
 	
 	data: function(data) {
@@ -324,8 +318,9 @@ var PlayerHandler = new Class({
 						break;
 					}
 				case 'describe':
-					if(cards[commands[1]]) {
-						this.message(new cards[commands[1]]().description + '\n');
+					var desc = cards.describe(commands[1]);
+					if(desc) {
+						this.message(desc + '\n');
 						break;
 					}
 				default:
@@ -352,41 +347,34 @@ var PlayerHandler = new Class({
 				}
 				else {
 					this.message('game started at ' + this.game.started
-						+ 'its currently ' + this.game.handlers[this.game.nextPlayer] + '\'s turn');
+						+ 'its currently ' + this.game.handlers[this.game.currentPlayer] + '\'s turn');
 				}
 				return true;
 			case 'players':
-				some = false;
 				this.game.handlers.each(function(h) {
-					if(h != this && h.player) {
+					if(h.player) {
 						this.message(h.player.name + '\n');
-						some = true;
 					}
 				}, this);
-				if(!some) {
-					this.message('no other players\n');
-				}
 				return true;
 			case 'hand':
-			case 'table':
 				some = false;
-				type = commands[1] == 'table';
-				if(type && !this.turn) {
-					return false;
-				}
-				this.player.hand.each(function(hcard) {
-					if(type == hcard.played) {
-						this.message(hcard.card.name + '\n');
-						some = true;
-					}
+				this.player.hand.each(function(card) {
+					this.message(card.name + '\n');
+					some = true;
 				}, this);
 				if(!some) {
-					if(type) {
-						this.message('you haven\'t played any cards yet\n');
-					}
-					else {
-						this.message('you have no cards in your hand\n');
-					}
+					this.message('you have no cards in your hand\n');
+				}
+				return true;
+			case 'table':
+				some = false;
+				this.player.table.each(function(card) {
+					this.message(card.name + '\n');
+					some = true;
+				}, this);
+				if(!some) {
+					this.message('you haven\'t played any cards yet\n');
 				}
 				return true;
 			case 'commands':
