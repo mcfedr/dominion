@@ -2,6 +2,13 @@ require('./mootools.js');
 var player = require('./player.js');
 var cards = require('./cards.js');
 
+String.prototype.possessive = function() {
+	if(this.charAt(this.length - 1) != 's') {
+		return this + '\'s';
+	}
+	return this + '\'';
+};
+
 var gamenum = 0;
 
 var Game = new Class({
@@ -90,7 +97,7 @@ var Game = new Class({
 				}
 				else {
 					this.message('game started at ' + this.started + '\n'
-						+ 'it\'s currently ' + this.handlers[this.currentPlayer].player.name + '\'s turn');
+						+ 'it\'s currently ' + this.handlers[this.currentPlayer].player.name.possessive() + ' turn');
 				}
 				return true;
 			}
@@ -163,7 +170,7 @@ var Turn = new Class({
 		this.handler.message('its your turn\n');
 		this.command(['show', 'status']);
 		this.handler.message('\n');
-		this.game.message('its ' + this.player.name + '\'s turn\n', this.handler);
+		this.game.message('its ' + this.player.name.possessive() + ' turn\n', this.handler);
 		this.resetTimeout();
 	},
 	

@@ -191,6 +191,8 @@ cards.gardens = new Class({
 	}
 });
 
+actionCards.push(cards.gardens);
+
 cards.curse = new Class({
 	Extends: Card,
 	name: 'curse',
@@ -207,7 +209,7 @@ cards.chapel = new Class({
 	doAction: function(turn, done) {
 		var count = 0;
 		var selectcard = function(cardname) {
-			if(card != 'skip') {
+			if(cardname != 'skip') {
 				if(turn.player.hand.some(function(card) {
 					if(card.name == cardname && card != this) {
 						turn.player.trash(card);
@@ -247,7 +249,7 @@ cards.thief = new Class({
 		+ 'If they revealed any Treasure cards, they one of them that you choose\n'
 		+ 'You may gain any or all of these trashed cards. '
 		+ 'They discard any other revealed cards.',
-	cost: 4,
+	cost: 0,
 	doAction: function(turn, done) {
 		if(turn.game.handlers.length > 1) {
 			var start = turn.game.currentPlayer;
@@ -261,12 +263,12 @@ cards.thief = new Class({
 				var h = turn.game.handlers[i];
 				var card1 = h.player.reveal();
 				if(card1.treasure == 0) {
-					h.player.gain(card1);
+					h.player.gain(card1, true);
 					card1 = null;
 				}
 				var card2 = h.player.reveal();
 				if(card2.treasure == 0) {
-					card2 = h.player.gain(card1);
+					h.player.gain(card2, true);
 					card2 = null;
 				}
 				var read = function(card) {

@@ -37,8 +37,8 @@ var Player = exports.Player = new Class({
 		}
 		var c = this.deck.pop();
 		if(!quiet) {
-			this.handler.message('you revealed a ' + card.name + '\n');
-			this.handler.game.message(this.name + ' revealed a ' + card.name + '\n', this.handler);
+			this.handler.message('you revealed a ' + c.name + '\n');
+			this.handler.game.message(this.name + ' revealed a ' + c.name + '\n', this.handler);
 		}
 		return c;
 	},
