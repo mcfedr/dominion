@@ -83,6 +83,32 @@ var Game = new Class({
 				handler.message(this.deck.describeTrash());
 				return true;
 			}
+			else if(commands[1] == 'game') {
+				if(!this.started) {
+					this.message('game hasn\'t been started yet\n');
+				}
+				else {
+					this.message('game started at ' + this.started
+						+ 'its currently ' + this.handlers[this.currentPlayer] + '\'s turn');
+				}
+				return true;
+			}
+			else if(commands[1] == 'players') {
+				this.handlers.each(function(h) {
+					if(h.player) {
+						this.message(h.player.name + '\n');
+					}
+				}, this);
+				return true;
+			}
+			else if(commands[1] == 'player') {
+				return this.handlers.some(function(h) {
+					if(h.player.name == commands[2]) {
+						this.message(h.player.describe());
+						return true;
+					}
+				}, this);
+			}
 		}
 		return false;
 	},
@@ -341,22 +367,6 @@ var PlayerHandler = new Class({
 	show: function(commands) {
 		var some, type;
 		switch(commands[1]) {
-			case 'game':
-				if(!this.game.started) {
-					this.message('game hasn\'t been started yet\n');
-				}
-				else {
-					this.message('game started at ' + this.game.started
-						+ 'its currently ' + this.game.handlers[this.game.currentPlayer] + '\'s turn');
-				}
-				return true;
-			case 'players':
-				this.game.handlers.each(function(h) {
-					if(h.player) {
-						this.message(h.player.name + '\n');
-					}
-				}, this);
-				return true;
 			case 'hand':
 				some = false;
 				this.player.hand.each(function(card) {
