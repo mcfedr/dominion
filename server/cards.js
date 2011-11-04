@@ -435,16 +435,13 @@ cards.witch = new Class({
 					else {
 						if(turn.game.deck.has('curse')) {
 							turn.game.handlers[i].player.gain(turn.game.deck.take('curse'));
-						}
-						else {
-							break;
-						}
-						i = (i + 1) % (turn.game.handlers.length);
-						if(i != start) {
-							next.delay(0);
-						}
-						else {
-							done();
+							i = (i + 1) % (turn.game.handlers.length);
+							if(i != start) {
+								next.delay(0);
+							}
+							else {
+								done();
+							}
 						}
 					}
 				}));
