@@ -26,7 +26,7 @@ var Player = exports.Player = new Class({
 	gain: function(card) {
 		this.discard.push(card);
 		this.handler.message('you gained a ' + card.name + '\n');
-		this.handler.game.message(this.name + ' gained a ' + card.name, this.handler + '\n');
+		this.handler.game.message(this.name + ' gained a ' + card.name + '\n', this.handler);
 	},
 	
 	reveal: function(pri) {
@@ -36,7 +36,7 @@ var Player = exports.Player = new Class({
 		var c = this.deck.pop();
 		if(!pri) {
 			this.handler.message('you revealed a ' + card.name + '\n');
-			this.handler.game.message(this.name + ' revealed a ' + card.name, this.handler + '\n');
+			this.handler.game.message(this.name + ' revealed a ' + card.name + '\n', this.handler);
 		}
 	},
 	
@@ -53,14 +53,14 @@ var Player = exports.Player = new Class({
 		this.hand.erase(card);
 		this.table.push(card);
 		this.handler.message('you played a ' + card.name + '\n');
-		this.handler.game.message(this.name + ' played a ' + card.name, this.handler + '\n');
+		this.handler.game.message(this.name + ' played a ' + card.name + '\n', this.handler);
 	},
 	
 	trash: function(card) {
 		this.hand.erase(card);
 		this.table.erase(card);
 		this.handler.message('you trashed a ' + card.name + '\n');
-		this.handler.game.message(this.name + ' trashed a ' + card.name, this.handler + '\n');
+		this.handler.game.message(this.name + ' trashed a ' + card.name + '\n', this.handler);
 	},
 	
 	cards: function() {
