@@ -216,7 +216,7 @@ var Turn = new Class({
 					var some = false;
 					Object.each(this.game.deck.cards, function(cards, name) {
 						if(cards.length > 0) {
-							if(cards[0].cost < cash) {
+							if(cards[0].cost <= cash) {
 								this.handler.message(name + ' (' + cards[0].cost + ')\n');
 								some = true;
 							}
