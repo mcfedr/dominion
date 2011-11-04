@@ -369,10 +369,17 @@ var PlayerHandler = new Class({
 	
 	data: function(data) {
 		data = data.trim();
+		if(data == '') {
+			return;
+		}
+		var lines = data.split('\n');
+		if(lines.length > 1) {
+			lines.each(this.data.bind(this));
+			return;
+		}
 		if(this.player) {
 			console.log(this.player.name + '<-' + data.replace(/\n/g, ' '));
 		}
-		//console.log('got data:' + data);
 		if(this.nextData) {
 			if(!this.nextData(data)) {
 				this.nextData = false;
