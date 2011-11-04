@@ -204,6 +204,12 @@ var Turn = new Class({
 				case 'cash':
 					this.handler.message(this.cash() + '\n');
 					return true;
+				case 'status':
+					this.handler.show(['show', 'hand']);
+					this.handler.message('actions: ' + this.actions + '\n'
+						+ 'buys: ' + this.buys + '\n'
+						+ 'cash: ' + this.cash() + '\n');
+					return true;
 			}
 		}
 		else if(command[0] == 'buy') {
