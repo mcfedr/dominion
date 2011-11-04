@@ -247,7 +247,7 @@ cards.thief = new Class({
 		+ 'If they revealed any Treasure cards, they one of them that you choose\n'
 		+ 'You may gain any or all of these trashed cards. '
 		+ 'They discard any other revealed cards.',
-	cost: 0,
+	cost: 4,
 	doAction: function(turn, done) {
 		if(turn.game.handlers.length > 1) {
 			var start = turn.game.currentPlayer;

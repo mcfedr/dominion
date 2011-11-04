@@ -89,27 +89,27 @@ var Game = new Class({
 					this.message('game hasn\'t been started yet\n');
 				}
 				else {
-					this.message('game started at ' + this.started
-						+ 'its currently ' + this.handlers[this.currentPlayer] + '\'s turn');
+					this.message('game started at ' + this.started + '\n'
+						+ 'it\'s currently ' + this.handlers[this.currentPlayer].player.name + '\'s turn');
 				}
 				return true;
 			}
 			else if(commands[1] == 'players') {
-				this.handlers.each(function(h) {
+				this.handlers.each(function(h, index) {
 					if(h.player) {
-						handler.message(h.player.name + '\n');
+						handler.message(h.player.name + (this.currentPlayer == index ? '*' : '') + '\n');
 					}
 				}, this);
 				return true;
 			}
-			else if(commands[1] == 'player') {
+			/*else if(commands[1] == 'player') {
 				return this.handlers.some(function(h) {
 					if(h.player.name == commands[2]) {
 						this.message(h.player.describe());
 						return true;
 					}
 				}, this);
-			}
+			}*/
 		}
 		return false;
 	},
@@ -286,19 +286,19 @@ var Turn = new Class({
 	addBuys: function(count) {
 		count = count || 1;
 		this.buys += count;
-		this.handler.message('you have ' + count + ' more buy' + (count > 1 ? 's' : ''));
+		this.handler.message('you have ' + count + ' more buy' + (count > 1 ? 's' : '') + '\n');
 	},
 	
 	addActions: function(count) {
 		count = count || 1;
 		this.actions += count;
-		this.handler.message('you have ' + count + ' more action' + (count > 1 ? 's' : ''));
+		this.handler.message('you have ' + count + ' more action' + (count > 1 ? 's' : '') + '\n');
 	},
 	
 	addTreasure: function(count) {
 		count = count || 1;
 		this.treasure += count;
-		this.handler.message('you have ' + count + ' more cash' + (count > 1 ? 's' : ''));
+		this.handler.message('you have ' + count + ' more cash\n');
 	},
 	
 	cash: function() {
@@ -453,6 +453,8 @@ var PlayerHandler = new Class({
 			+ 'show actions - the number of actions you have left\n'
 			+ 'show buys - the number of buys you have left\n'
 			+ 'show table - show the cards you have played\n'
+			+ 'show canbuy - show the cards you can afford\n'
+			+ 'show status - a summary of this infomation\n'
 			+ 'buy [card] - buy a card\n'
 			+ 'play [card] - play a card in your hand\n'
 			+ 'done - to finish your turn\n'
