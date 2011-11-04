@@ -44,9 +44,10 @@ var Player = exports.Player = new Class({
 		count = count || 5;
 		var c, i;
 		for(i = 0;i < count;i++) {
-			this.hand.push(this.reveal(true));
+			var c = this.reveal(true);
+			this.hand.push(c);
+			this.handler.message('you drew a ' + c.name + '\n');
 		}
-		this.handler.message('you drew a ' + card.name + '\n');
 	},
 	
 	play: function(card) {
