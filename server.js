@@ -1,4 +1,4 @@
-require('mootools');
+require('./mootools.js');
 var player = require('./player.js');
 var cards = require('./cards.js');
 
