@@ -107,7 +107,7 @@ exports.Deck = new Class({
 	describe: function() {
 		var d = '';
 		Object.each(this.cards, function(cards, name) {
-			d += name + ': ' + cards.length + '\n';
+			d += name + '(' + (new cards[name]().cost) + '): ' + cards.length + '\n';
 		});
 		return d;
 	},

@@ -189,7 +189,6 @@ var Turn = new Class({
 		if(this.ended) {
 			return false;
 		}
-		this.resetTimeout();
 		if(command[0] == 'done' || command[0] == 'finished') {
 			this.end();
 			return true;
@@ -213,6 +212,7 @@ var Turn = new Class({
 				if(this.game.deck.has(cardname)) {
 					var cost = this.game.deck.cost(cardname);
 					if(cost <= this.cash()) {
+						this.resetTimeout();
 						this.spent += cost;
 						this.buys--;
 						this.player.gain(this.game.deck.take(cardname));
@@ -239,6 +239,7 @@ var Turn = new Class({
 				if(!this.player.hand.some(function(card) {
 					if(card.name == cardname) {
 						if(card.doAction) {
+							this.resetTimeout();
 							this.actions--;
 							this.player.play(card);
 							this.handler.message('you played a ' + cardname + '\n');
