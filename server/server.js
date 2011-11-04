@@ -367,7 +367,15 @@ var PlayerHandler = new Class({
 		this.message("hello\nwhat is your name?\n");
 	},
 	
+	buffer: '',
+	
 	data: function(data) {
+		data = this.buffer + data;
+		if(data.charAt(data.length - 1) != '\n') {
+			this.buffer += data;
+			return;
+		}
+		this.buffer = '';
 		data = data.trim();
 		if(data == '') {
 			return;
