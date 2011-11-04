@@ -371,7 +371,7 @@ var PlayerHandler = new Class({
 	
 	data: function(data) {
 		data = this.buffer + data;
-		if(data.charAt(data.length - 1) != '\n') {
+		if(data.length == 0 || data.charAt(data.length - 1) != '\n') {
 			this.buffer += data;
 			return;
 		}
