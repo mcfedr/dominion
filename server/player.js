@@ -17,7 +17,7 @@ var Player = exports.Player = new Class({
 		this.shuffles++;
 		this.deck.each(function(c) {
 			this.discard.push(c);
-		});
+		}, this);
 		this.deck = [];
 		var i;
 		do {
@@ -58,7 +58,7 @@ var Player = exports.Player = new Class({
 	},
 	
 	draw: function(count, quiet) {
-		count = count || 5;
+		count = count || 25;
 		var c, i;
 		for(i = 0;i < count;i++) {
 			c = this.reveal(true);
@@ -69,10 +69,11 @@ var Player = exports.Player = new Class({
 		}
 	},
 	
-	addtohand: function(card, quiet) {
+	addtohand: function(card, quiet, quietall) {
 		this.hand.push(card);
 		if(!quiet) {
-			this.handler.message('you drew a ' + c.name + '\n');
+			this.handler.message('you added a ' + card.name + ' to your hand\n');
+			this.handler.game.message(this.name + ' added a ' + card.name + ' to his hand\n', this.handler);
 		}
 	},
 	
@@ -101,17 +102,18 @@ var Player = exports.Player = new Class({
 		return this.deck.concat(this.discard).concat(this.hand).concat(this.table);
 	},
 	
-	playsMoat: function(cb) {
+	playsMoat: function(cb, handler) {
 		if(!this.hand.some(function(card) {
 			if(card.name == 'moat') {
 				this.handler.nextData = function(reply) {
 					if(reply == 'yes') {
+						this.handler.game.message(this.name + ' played a moat\n', this.handler);
 						cb(true);
 					}
 					else {
 						cb(false);
 					}
-				};
+				}.bind(this);
 				this.handler.message('do you want to play your moat\n');
 				return true;
 			}
