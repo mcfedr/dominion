@@ -378,7 +378,7 @@ exports.PlayerHandler = new Class({
 	data: function(data) {
 		data = this.buffer + data;
 		if(data.length == 0 || data.charAt(data.length - 1) != '\n') {
-			this.buffer += data;
+			this.buffer = data;
 			return;
 		}
 		this.buffer = '';
@@ -388,7 +388,9 @@ exports.PlayerHandler = new Class({
 		}
 		var lines = data.split('\n');
 		if(lines.length > 1) {
-			lines.each(this.data.bind(this));
+			lines.each(function(l) {
+				this.data(l + '\n');
+			}, this);
 			return;
 		}
 		if(this.player) {
