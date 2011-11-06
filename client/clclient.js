@@ -9,16 +9,24 @@ var CLClient = new Class({
 		this.rli.question("What is the host address?\n", function(host) {
 			this.connect(host);
 		}.bind(this));
+		//this.rli.on('line', this.inputLine.bind(this));
 	},
 	
 	getName: function(cb) {
-		this.rli.question("What is your name?\n", cb);
+		this.rli.question("What is your name punk?\n", cb);
 	},
 	
-	finish: function() {
+	finish: function(e) {
+		if(e) {
+			console.log(e);
+		}
 		console.log('Bye');
 		this.rli.close();
 		process.stdin.destroy();
+	},
+	
+	inputLine: function(line) {
+		
 	},
 	
 	handled: function(l) {
@@ -26,7 +34,7 @@ var CLClient = new Class({
 	},
 	
 	unhandled: function(l) {
-		console.log(l);
+		console.log('>' + l.replace(/\n/g, '\\n'));
 	}
 });
 

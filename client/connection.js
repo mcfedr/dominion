@@ -15,10 +15,10 @@ exports.Connection = new Class({
 			this.emit('data', d);
 		}.bind(this));
 		this.socket.on('end', function(d) {
-			this.emit('data', d);
+			this.emit('end', d);
 		}.bind(this));
 		this.socket.on('error', function(d) {
-			this.emit('data', d);
+			this.emit('error', d);
 		}.bind(this));
 		this.on('data', this.data.bind(this));
 	},

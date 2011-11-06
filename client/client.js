@@ -6,7 +6,7 @@ exports.Client = new Class({
 		
 	},
 	
-	finish: function() {
+	finish: function(e) {
 		
 	},
 	
@@ -19,6 +19,11 @@ exports.Client = new Class({
 		this.connection.on('end', this.end.bind(this));
 	},
 	
+	start: function(cb) {
+		this.message('start');
+		
+	},
+	
 	message: function(message) {
 		if(this.connected) {
 			this.connection.message(message + '\n');
@@ -29,11 +34,22 @@ exports.Client = new Class({
 		this.connected = true;
 	},
 	
+	handlers: {
+		'what is your name?': function() {
+			this.getName(this.message.bind(this));
+			return true;
+		},
+		'Bye': function() {
+			//this.end();
+			return true;
+		}
+		
+	},
+	
 	line: function(line) {
 		var handled = false;
-		if(line == 'what is your name?') {
-			handled = true;
-			this.getName(this.message.bind(this));
+		if(this.handlers[line]) {
+			handled = this.handlers[line].apply(this);
 		}
 		if(handled) {
 			this.handled(line);
@@ -44,9 +60,8 @@ exports.Client = new Class({
 	},
 	
 	error: function(e) {
-		console.log(e);
 		this.connected = false;
-		this.finish();
+		this.finish(e);
 	},
 	
 	end: function() {

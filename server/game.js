@@ -9,7 +9,7 @@ String.prototype.possessive = function() {
 	return this + '\'';
 };
 
-var gamenum = 0;
+var gamenum = 0, opengame;
 
 var Game = new Class({
 	handlers: [],
@@ -17,12 +17,13 @@ var Game = new Class({
 	ended: false,
 	currentPlayer: -1,
 	
-	initialize: function() {
+	initialize: function(log) {
 		this.gamenum = gamenum++;
+		this.log = log;
 	},
 	
 	start: function() {
-		console.log('starting game ' + this.gamenum);
+		this.log('starting game ' + this.gamenum);
 		this.started = new Date();
 		this.message('the game has started\n');
 		
@@ -149,8 +150,7 @@ var Game = new Class({
 	},
 	
 	end: function() {
-		console.log('finished game ' + this.gamenum);
-		games[this.gamenum] = false;
+		this.log('finished game ' + this.gamenum);
 		this.ended = true;
 		this.message('the game has finished\n');
 		this.handlers.each(function(h) {
@@ -345,8 +345,9 @@ var Turn = new Class({
 exports.PlayerHandler = new Class({
 	kicks: 0,
 	ended: false,
-	initialize: function(socket) {
+	initialize: function(socket, log) {
 		this.socket = socket;
+		this.log = log;
 		socket.setEncoding('utf8');
 		socket.on('data', this.data.bind(this));
 		socket.on('end', this.remove.bind(this));
@@ -356,12 +357,12 @@ exports.PlayerHandler = new Class({
 			if(name) {
 				this.player = new player.Player(name);
 				this.player.handler = this;
-				if(opengame.started) {
-					opengame = new Game();
+				if(!opengame || opengame.started) {
+					opengame = new Game(this.log);
 				}
 				opengame.handlers.push(this);
 				this.game = opengame;
-				console.log(this.player.name + '--connected');
+				this.log(this.player.name + '--connected');
 				this.message('welcome ' + this.player.name + '\n'
 					+ 'you have joined game ' + this.game.gamenum+ '\n'
 					+ 'type help for a list of commands\n\n');
@@ -387,14 +388,17 @@ exports.PlayerHandler = new Class({
 			return;
 		}
 		var lines = data.split('\n');
-		if(lines.length > 1) {
+		if(lines.length) {
 			lines.each(function(l) {
-				this.data(l + '\n');
+				this.line(l);
 			}, this);
-			return;
 		}
+	},
+	
+	line: function(data) {
+		data = data.trim();
 		if(this.player) {
-			console.log(this.player.name + '<-' + data.replace(/\n/g, ' '));
+			this.log(this.player.name + '<-' + data.replace(/\n/g, '\\n'));
 		}
 		if(this.nextData) {
 			if(!this.nextData(data)) {
@@ -494,7 +498,7 @@ exports.PlayerHandler = new Class({
 	message: function(message) {
 		if(!this.ended) {
 			if(this.player && message != '' && message != '\n') {
-				console.log(this.player.name + '->' + message.replace(/\n/g, ' '));
+				this.log(this.player.name + '->' + message.replace(/\n/g, '\\n'));
 			}
 			this.socket.write(message);
 		}
@@ -511,7 +515,7 @@ exports.PlayerHandler = new Class({
 			this.nextData(false);
 		}
 		if(this.player) {
-			console.log(this.player.name + '--disconnected');
+			this.log(this.player.name + '--disconnected');
 			if(this.turn) {
 				this.turn.end();
 			}
@@ -519,5 +523,3 @@ exports.PlayerHandler = new Class({
 		}
 	}
 });
-
-var opengame = new Game();
