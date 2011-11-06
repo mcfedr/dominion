@@ -9,7 +9,7 @@ var CLClient = new Class({
 		this.rli.question("What is the host address?\n", function(host) {
 			this.connect(host);
 		}.bind(this));
-		//this.rli.on('line', this.inputLine.bind(this));
+		this.rli.on('line', this.inputLine.bind(this));
 	},
 	
 	getName: function(cb) {

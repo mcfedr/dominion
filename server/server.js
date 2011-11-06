@@ -8,7 +8,7 @@ var log = function(m) {
 	//logstr.write(m + '\n');
 	console.log(m);
 	logbuff.push(m);
-	if(logbuff.length > 200) {
+	if(logbuff.length > 500) {
 		logbuff.shift();
 	}
 };
