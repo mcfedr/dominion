@@ -503,9 +503,9 @@ cards.spy = new Class({
 
 actionCards.push(cards.spy);
 
-cards.chanceller = new Class({
+cards.chancellor = new Class({
 	Extends: Card,
-	name: 'chanceller',
+	name: 'chancellor',
 	description: '+2 Treasure\hYou may immedietly put your deck into your discard pile.',
 	cost: 3,
 	doAction: function(turn, done) {
@@ -521,7 +521,7 @@ cards.chanceller = new Class({
 	}
 });
 
-actionCards.push(cards.chanceller);
+actionCards.push(cards.chancellor);
 
 cards.workshop = new Class({
 	Extends: Card,
