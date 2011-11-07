@@ -58,7 +58,7 @@ var Player = exports.Player = new Class({
 	},
 	
 	draw: function(count, quiet) {
-		count = count || 25;
+		count = count || 5;
 		var c, i;
 		for(i = 0;i < count;i++) {
 			c = this.reveal(true);

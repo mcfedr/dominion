@@ -107,7 +107,7 @@ exports.Deck = new Class({
 				this.add(new c());
 			}
 		}
-		while(actions.length > 0 && chosen < 25);
+		while(actions.length > 0 && chosen < 10);
 	},
 	
 	add: function(card) {

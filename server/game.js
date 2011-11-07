@@ -48,9 +48,9 @@ var Game = new Class({
 			for(i = 0;i< 7;i++) {
 				h.player.gain(this.deck.take('copper'), true);
 			}
-			Object.each(this.deck.cards, function(list, cardname) {
+			/*Object.each(this.deck.cards, function(list, cardname) {
 				h.player.gain(this.deck.take(cardname), true);
-			}, this);
+			}, this);*/
 			h.player.draw();
 		}, this);
 		
@@ -243,7 +243,7 @@ var Turn = new Class({
 			cardname = command[1];
 			if(this.buys > 0) {
 				if(this.game.deck.has(cardname)) {
-					var cost = 0;//this.game.deck.cost(cardname);
+					var cost = this.game.deck.cost(cardname);
 					if(cost <= this.cash()) {
 						this.resetTimeout();
 						this.spent += cost;
