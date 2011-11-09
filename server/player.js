@@ -73,6 +73,8 @@ var Player = exports.Player = new Class({
 		this.hand.push(card);
 		if(!quiet) {
 			this.handler.message('you added a ' + card.name + ' to your hand\n');
+		}
+		if(!quietall) {
 			this.handler.game.message(this.name + ' added a ' + card.name + ' to his hand\n', this.handler);
 		}
 	},

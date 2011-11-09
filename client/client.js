@@ -4,6 +4,7 @@ var cn = require('./connection.js');
 exports.Client = new Class({
 	initialize: function(handler) {
 		this.handler = handler;
+		handler.client = this;
 	},
 	
 	connect: function(host) {
@@ -19,6 +20,18 @@ exports.Client = new Class({
 		this.message('start');
 	},
 	
+	play: function(card) {
+		this.message('play ' + card);
+	},
+	
+	buy: function(card) {
+		this.message('buy ' + card);
+	},
+	
+	canbuy: function() {
+		this.message('show canbuy');
+	},
+	
 	message: function(message) {
 		if(this.connected) {
 			this.connection.message(message + '\n');
@@ -31,6 +44,14 @@ exports.Client = new Class({
 	},
 	
 	handlers: [
+		{
+			match: function(l) {
+				return l == '';
+			},
+			handle: function() {
+				this.handler.emptyLine();
+			}
+		},
 		{
 			match: function(l) {
 				return l == 'what is your name?';
@@ -103,6 +124,22 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
+				return l.indexOf('canbuy:') === 0;
+			},
+			handle: function(l) {
+				this.handler.canbuy(l.substr(8).split(','));
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'you can\'t afford anything';
+			},
+			handle: function(l) {
+				this.handler.canbuy(false);
+			}
+		},
+		{
+			match: function(l) {
 				return l.indexOf('actions:') === 0;
 			},
 			handle: function(l) {
@@ -114,7 +151,7 @@ exports.Client = new Class({
 				return l.indexOf('buys:') === 0;
 			},
 			handle: function(l) {
-				this.handler.actions(parseInt(l.substr(6)));
+				this.handler.buys(parseInt(l.substr(6)));
 			}
 		},
 		{
@@ -122,7 +159,7 @@ exports.Client = new Class({
 				return l.indexOf('cash:') === 0;
 			},
 			handle: function(l) {
-				this.handler.actions(parseInt(l.substr(6)));
+				this.handler.cash(parseInt(l.substr(6)));
 			}
 		},
 		{
@@ -189,19 +226,23 @@ var ClientHandler = new Class({
 		
 	},
 	
-	hand: function() {
+	hand: function(cards) {
 		
 	},
 	
-	actions: function() {
+	actions: function(actions) {
 		
 	},
 	
-	buys: function() {
+	buys: function(buys) {
 		
 	},
 	
-	cash: function() {
+	cash: function(cash) {
+		
+	},
+	
+	emptyLine: function() {
 		
 	},
 	
@@ -214,10 +255,10 @@ var ClientHandler = new Class({
 	},
 	
 	handled: function(l) {
-		//console.log(l);
+		
 	},
 	
 	unhandled: function(l) {
-		//console.log('>' + l.replace(/\n/g, '\\n'));
+		
 	}
 });

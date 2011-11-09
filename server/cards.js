@@ -845,6 +845,7 @@ cards.throneroom = new Class({
 			turn.handler.nextData = function(cardname) {
 				if(turn.player.hand.some(function(card) {
 					if(card.name == cardname && card.doAction) {
+						turn.game.message(turn.player.name + ' played a  ' + cardname + ' with a throneroom', turn.handler);
 						(function() {
 							card.doAction(turn, function() {
 								(function() {
@@ -884,7 +885,7 @@ cards.library = new Class({
 					turn.handler.message('do you want to keep or discard ' + c.name + '\n');
 					turn.handler.nextData = function(reply) {
 						if(reply == 'keep') {
-							turn.player.addtohand(c, true);
+							turn.player.addtohand(c, true, true);
 						}
 						else {
 							turn.player.discardCard(c);
@@ -893,7 +894,7 @@ cards.library = new Class({
 					};
 				}
 				else {
-					turn.player.addtohand(c, true);
+					turn.player.addtohand(c, false, true);
 					next.delay(0);
 				}
 			}

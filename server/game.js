@@ -264,15 +264,20 @@ var Turn = new Class({
 				case 'canbuy':
 					var cash = this.cash();
 					var some = false;
+					var buyingcards = [];
 					Object.each(this.game.deck.cards, function(cards, name) {
 						if(cards.length > 0) {
 							if(cards[0].cost <= cash) {
-								this.handler.message(name + ' (' + cards[0].cost + ')\n');
-								some = true;
+								buyingcards.push(name);
 							}
 						}
 					}, this);
-					if(!some) {
+					if(buyingcards.length > 0) {
+						this.handler.message('canbuy: ' + buyingcards.reduce(function(x, v, k) {
+							return (x ? x + ',' : '') + v;
+						}) + '\n');
+					}
+					else {
 						this.handler.message('you can\'t afford anything\n');
 					}
 					return true;
