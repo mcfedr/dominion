@@ -218,7 +218,7 @@ var Turn = new Class({
 	},
 	
 	resetTimeout: function() {
-		clearTimeout(this.timeout);
+		/*clearTimeout(this.timeout);
 		this.timeout = (function() {
 			this.handler.kicks++;
 			if(this.handler.kicks <= 3) {
@@ -232,7 +232,7 @@ var Turn = new Class({
 				this.handler.end();
 				this.game.message(this.player.name + ' has been kicked for taking too long\n');
 			}
-		}).delay(60000, this);
+		}).delay(60000, this);*/
 	},
 	
 	command: function(command) {
