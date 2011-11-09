@@ -11,7 +11,7 @@ var Card = new Class({
 	attackedHandlers: function(turn, cb) {
 		clearTimeout(turn.timeout);
 		turn.handler.nextData = function() {
-			turn.handler.message('waiting for other players');
+			turn.handler.message(this.name + ': waiting for other players');
 			return true;
 		};
 		handlers = [];
@@ -260,11 +260,11 @@ cards.chapel = new Class({
 	cost: 2,
 	doAction: function(turn, done) {
 		var count = 0;
-		turn.handler.message('choose up to 4 cards to trash, skip when you are done\n');
+		turn.handler.message(this.name + ': choose up to 4 cards to trash, skip when you are done\n');
 		turn.handler.nextData = function(cardname) {
 			if(cardname != 'skip') {
 				if(turn.player.hand.some(function(card) {
-					if(card.name == cardname && card != this) {
+					if(card.name == cardname) {
 						turn.player.trash(card);
 						turn.game.deck.trash(card);
 						return true;
@@ -273,7 +273,7 @@ cards.chapel = new Class({
 					count++;
 				}
 				else {
-					turn.handler.message('you don\'t have this card\n');
+					turn.handler.message(this.name + ': you don\'t have this card\n');
 				}
 				if(count < 4 && turn.player.hand.length > 0) {
 					return true;
@@ -287,7 +287,7 @@ cards.chapel = new Class({
 				done();
 				return false;
 			}
-		};
+		}.bind(this);
 	}
 });
 
@@ -315,13 +315,13 @@ cards.thief = new Class({
 					card2 = null;
 				}
 				if(card1 && card2) {
-					turn.handler.message('you can gain either ' + card1.name + ' or ' + card2.name + ' or skip\n');
+					turn.handler.message(this.name + ': you can gain either ' + card1.name + ' or ' + card2.name + ' or skip\n');
 				}
 				else if(card1) {
-					turn.handler.message('you can gain either ' + card1.name + ' or skip\n');
+					turn.handler.message(this.name + ': you can gain either ' + card1.name + ' or skip\n');
 				}
 				else if(card2) {
-					turn.handler.message('you can gain either ' + card2.name + ' or skip\n');
+					turn.handler.message(this.name + ': you can gain either ' + card2.name + ' or skip\n');
 				}
 				else {
 					next.delay(0);
@@ -342,7 +342,7 @@ cards.thief = new Class({
 							card2 = null;
 						}
 						else {
-							turn.handler.message('you can\'t gain this card\n');
+							turn.handler.message(this.name + ': you can\'t gain this card\n');
 							return true;
 						}
 						if(card1) {
@@ -354,8 +354,8 @@ cards.thief = new Class({
 						next.delay(0);
 						return false;
 					}
-				};
-			}, done);
+				}.bind(this);
+			}.bind(this), done);
 		}.bind(this));
 	}
 });
@@ -394,7 +394,7 @@ cards.feast = new Class({
 		if(Object.some(turn.game.deck.cards, function(cards, name) {
 			return turn.game.deck.has(name) && turn.game.deck.cost(name) <= 5;
 		})) {
-			turn.handler.message('choose a card costing up to 5 treasure');
+			turn.handler.message(this.name + ': choose a card costing up to 5 treasure');
 			turn.handler.nextData = function(card) {
 				if(turn.game.deck.has(card) && turn.game.deck.cost(card) <= 5) {
 					turn.handler.player.gain(turn.game.deck.take(card));
@@ -402,10 +402,10 @@ cards.feast = new Class({
 					return false;
 				}
 				else {
-					turn.handler.message('card not available\n');
+					turn.handler.message(this.name + ': card not available\n');
 					return true;
 				}
-			};
+			}.bind(this);
 		}
 		else {
 			done();
@@ -477,10 +477,10 @@ cards.spy = new Class({
 		var spy = function(h, next) {
 			var card = h.player.reveal(true);
 			if(h == turn.handler) {
-				turn.handler.message('do you want to keep or discard ' + card.name + '\n');
+				turn.handler.message(this.name + ': do you want to keep or discard ' + card.name + '\n');
 			}
 			else {
-				turn.handler.message('should ' + h.player.name + ' keep or discard ' + card.name + '\n');
+				turn.handler.message(this.name + ': should ' + h.player.name + ' keep or discard ' + card.name + '\n');
 			}
 			turn.handler.nextData = function(action) {
 				if(action == 'keep') {
@@ -492,7 +492,7 @@ cards.spy = new Class({
 				next.delay(0);
 				return false;
 			};
-		};
+		}.bind(this);
 		this.attackedHandlers(turn, function(others) {
 			this.foreach(others, spy, function() {
 				spy(turn.handler, done);
@@ -506,11 +506,11 @@ actionCards.push(cards.spy);
 cards.chancellor = new Class({
 	Extends: Card,
 	name: 'chancellor',
-	description: '+2 Treasure\hYou may immedietly put your deck into your discard pile.',
+	description: '+2 Treasure\nYou may immedietly put your deck into your discard pile.',
 	cost: 3,
 	doAction: function(turn, done) {
 		turn.addTreasure(2);
-		turn.handler.message('do you want to discard your deck\n');
+		turn.handler.message(this.name + ': do you want to discard your deck\n');
 		turn.handler.nextData = function(action) {
 			if(action == 'discard' || action == 'yes') {
 				turn.player.shuffle();
@@ -532,7 +532,7 @@ cards.workshop = new Class({
 		if(Object.some(turn.game.deck.cards, function(cards, name) {
 			return turn.game.deck.has(name) && turn.game.deck.cost(name) <= 4;
 		})) {
-			turn.handler.message('what do you want to gain\n');
+			turn.handler.message(this.name + ': what do you want to gain\n');
 			turn.handler.nextData = function(cardname) {
 				if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= 4) {
 					turn.player.gain(turn.game.deck.take(cardname));
@@ -540,10 +540,10 @@ cards.workshop = new Class({
 					return false;
 				}
 				else {
-					turn.handler.message('that card is unavailable\n');
+					turn.handler.message(this.name + ': that card is unavailable\n');
 					return true;
 				}
-			};
+			}.bind(this);
 		}
 		else {
 			done();
@@ -600,7 +600,7 @@ cards.remodel = new Class({
 	cost: 4,
 	doAction: function(turn, done) {
 		if(turn.player.hand.length > 0) {
-			turn.handler.message('what do you want to trash\n');
+			turn.handler.message(this.name + ': what do you want to trash\n');
 			turn.handler.nextData = function(cardname) {
 				if(turn.player.hand.some(function(card) { 
 					if(card.name == cardname) {
@@ -611,7 +611,7 @@ cards.remodel = new Class({
 							if(Object.some(turn.game.deck.cards, function(cards, name) {
 								return turn.game.deck.has(name) && turn.game.deck.cost(name) <= cost;
 							})) {
-								turn.handler.message('what do you want to gain, costing up to ' + cost + '\n');
+								turn.handler.message(this.name + ': what do you want to gain, costing up to ' + cost + '\n');
 								turn.handler.nextData = function(cardname) {
 									if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= cost) {
 										turn.player.gain(turn.game.deck.take(cardname));
@@ -619,25 +619,25 @@ cards.remodel = new Class({
 										return false;
 									}
 									else {
-										turn.handler.message('that card is unavailable\n');
+										turn.handler.message(this.name + ': that card is unavailable\n');
 										return true;
 									}
-								};
+								}.bind(this);
 							}
 							else {
 								done();
 							}
-						}).delay(0);
+						}).delay(0, this);
 						return true;
 					}
 				}, this)) {
 					return false;
 				}
 				else {
-					turn.handler.message('that card is unavailable\n');
+					turn.handler.message(this.name + ': that card is unavailable\n');
 					return true;
 				}
-			};
+			}.bind(this);
 		}
 		else {
 			done();
@@ -673,7 +673,7 @@ cards.cellar = new Class({
 	cost: 2,
 	doAction: function(turn, done) {
 		var count = 0;
-		turn.handler.message('which cards do you want to discard\nskip if you are finished choosing');
+		turn.handler.message(this.name + ': which cards do you want to discard\nskip if you are finished choosing');
 		turn.handler.nextData = function(cardname) {
 			if(cardname != 'skip') {
 				if(!turn.player.hand.some(function(card) {
@@ -683,7 +683,7 @@ cards.cellar = new Class({
 						return true;
 					}
 				}, this)) {
-					turn.handler.message('you don\'t have this card\n');
+					turn.handler.message(this.name + ': you don\'t have this card\n');
 				}
 				if(turn.player.hand.length > 0) {
 					return true;
@@ -699,7 +699,7 @@ cards.cellar = new Class({
 				done();
 				return false;
 			}
-		};
+		}.bind(this);
 	}
 });
 
@@ -757,9 +757,9 @@ cards.militia = new Class({
 		this.attackedHandlers(turn, function(others) {
 			clearTimeout(turn.timeout);
 			turn.handler.nextData = function() {
-				turn.handler.message('waiting for other players');
+				turn.handler.message(this.name + ': waiting for other players');
 				return true;
-			};
+			}.bind(this);
 			var count = others.length;
 			var check = function() {
 				if(count == 0) {
@@ -767,9 +767,9 @@ cards.militia = new Class({
 					turn.resetTimeout();
 					done();
 				}
-			}
+			};
 			others.each(function(h) {
-				h.message('you must discard cards until you have only 3\n');
+				h.message(this.name + ': you must discard cards until you have only 3\n');
 				h.show(['show', 'hand']);
 				h.nextData = function(cardname) {
 					var ret;
@@ -787,12 +787,12 @@ cards.militia = new Class({
 						}
 					}, this)) {
 						h.nextData = choose;
-						h.message('you don\'t have that card\n');
+						h.message(this.name + ': you don\'t have that card\n');
 						return true;
 					}
 					return ret;
-				};
-			});
+				}.bind(this);
+			}, this);
 		}.bind(this));
 	}
 });
@@ -818,14 +818,14 @@ cards.bureaucrat = new Class({
 						return true;
 					}
 				})) {
-					turn.game.message(h.player.name + ' reveals that his hand has no victory points\n', h);
-					h.player.hand.each(function(card) {
-						turn.game.message(card.name + '\n', h);
+					var hand = h.player.hand.reduce(function(x, v, k) {
+						return (x ? x + ',' : '')  + v.name;
 					});
-					h.message('you reveal that you have no victory points');
+					turn.game.message(this.name + ': ' + h.player.name + ' reveals that his hand has no victory points: ' + hand, h);
+					h.message(this.name + ': you reveal that you have no victory points');
 				}
 				next.delay(0);
-			}, done);
+			}.bind(this), done);
 		}.bind(this));
 	}
 });
@@ -841,17 +841,15 @@ cards.throneroom = new Class({
 		if(turn.player.hand.some(function(card) {
 			return !!card.doAction;
 		})) {
-			turn.handler.message('what card do you want to play twice');
+			turn.handler.message(this.name + ': what card do you want to play twice');
 			turn.handler.nextData = function(cardname) {
 				if(turn.player.hand.some(function(card) {
 					if(card.name == cardname && card.doAction) {
-						turn.game.message(turn.player.name + ' played a  ' + cardname + ' with a throneroom', turn.handler);
+						turn.game.message(this.name + ': ' + turn.player.name + ' played a  ' + cardname + ' with a throneroom', turn.handler);
 						(function() {
 							card.doAction(turn, function() {
 								(function() {
-									card.doAction(turn, function() {
-										done();
-									});
+									card.doAction(turn, done);
 								}).delay(0);
 							});
 						}).delay(0);
@@ -861,10 +859,10 @@ cards.throneroom = new Class({
 					return false;
 				}
 				else {
-					turn.handler.message('that card in unavailable\n');
+					turn.handler.message(this.name + ': that card in unavailable\n');
 					return true;
 				}
-			};
+			}.bind(this);
 		}
 	}
 });
@@ -882,7 +880,7 @@ cards.library = new Class({
 			if(turn.player.hand.length < 7) {
 				c = turn.player.reveal(true);
 				if(c.doAction) {
-					turn.handler.message('do you want to keep or discard ' + c.name + '\n');
+					turn.handler.message(this.name + ': do you want to keep or discard ' + c.name + '\n');
 					turn.handler.nextData = function(reply) {
 						if(reply == 'keep') {
 							turn.player.addtohand(c, true, true);
@@ -901,7 +899,7 @@ cards.library = new Class({
 			else {
 				done();
 			}
-		};
+		}.bind(this);
 		next();
 	}
 });
@@ -918,7 +916,7 @@ cards.mine = new Class({
 		if(turn.player.hand.some(function(card) {
 			return card.treasure > 0;
 		})) {
-			turn.handler.message('which treasure card do you want to discard\n');
+			turn.handler.message(this.name + ': which treasure card do you want to discard\n');
 			turn.handler.nextData = function(cardname) {
 				if(!turn.player.hand.some(function(card) {
 					if(card.name == cardname && card.treasure > 0) {
@@ -928,7 +926,7 @@ cards.mine = new Class({
 							if(Object.some(turn.game.deck.cards, function(cards, name) {
 								return turn.game.deck.has(name) && turn.game.deck.cost(name) <= cost && turn.game.deck.isTreasure(name);
 							})) {
-								turn.handler.message('which treasure card do you want to gain, costing up to ' + cost + '\n');
+								turn.handler.message(this.name + ': which treasure card do you want to gain, costing up to ' + cost + '\n');
 								turn.handler.nextData = function(cardname) {
 									if(turn.game.deck.has(cardname) && turn.game.deck.cost(cardname) <= cost && turn.game.deck.isTreasure(cardname)) {
 										turn.player.addtohand(turn.game.deck.take(cardname));
@@ -936,23 +934,23 @@ cards.mine = new Class({
 										return false;
 									}
 									else {
-										turn.handler.message('you can\'t gain that card\n');
+										turn.handler.message(this.name + ': you can\'t gain that card\n');
 										return true;
 									}
-								};
+								}.bind(this);
 							}
 							else {
 								done();
 							}
-						}).delay(0);
+						}).delay(0, this);
 						return true;
 					}
-				})) {
-					turn.handler.message('that card is unavailable\n');
+				}, this)) {
+					turn.handler.message(this.name + ': that card is unavailable\n');
 					return true;
 				}
 				return false;
-			};
+			}.bind(this);
 		}
 		else {
 			done();

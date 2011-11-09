@@ -1,4 +1,5 @@
 var client = require('./client.js');
+var cards = require('./../server/cards.js');
 
 var SimpleClient = new Class({
 	Extends: client.ClientHandler,
@@ -52,6 +53,10 @@ var SimpleClient = new Class({
 	
 	cash: function(cash) {
 		this.cash = cash;
+	},
+	
+	canbuy: function(cards) {
+		
 	},
 	
 	finishTurn: function() {

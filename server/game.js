@@ -319,6 +319,8 @@ var Turn = new Class({
 							this.player.play(card);
 							card.doAction(this, function() {
 								this.checkEnd();
+								this.handler.message('you finished playing ' + cardname + '\n');
+								this.game.message(this.player.name + ' finished playing ' + cardname + '\n', this.handler);
 							}.bind(this));
 						}
 						else {
@@ -398,7 +400,7 @@ exports.PlayerHandler = new Class({
 		socket.on('error', this.remove.bind(this));
 		
 		this.nextData = function(name) {
-			if(name) {
+			if(name && name.search(/^\w+$/) != -1) {
 				this.player = new player.Player(name);
 				this.player.handler = this;
 				if(!opengame || opengame.started) {
@@ -411,8 +413,12 @@ exports.PlayerHandler = new Class({
 					+ 'you have joined game ' + this.game.gamenum+ '\n'
 					+ 'type help for a list of commands\n\n');
 				this.game.checkStart();
+				return false;
 			}
-			return false;
+			else {
+				this.message('that is not a valid name\n');
+				return true;
+			}
 		};
 		
 		this.message("hello\nwhat is your name?\n");
