@@ -9,6 +9,7 @@ var Card = new Class({
 	treasure: 0,
 	points: 0,
 	attackedHandlers: function(turn, cb) {
+		clearTimeout(turn.timeout);
 		turn.handler.nextData = function() {
 			turn.handler.message('waiting for other players');
 			return true;
@@ -25,6 +26,7 @@ var Card = new Class({
 		var count = turn.handlers.length;
 		var check = function() {
 			if(count == 0) {
+				turn.resetTimeout();
 				turn.handler.nextData = false;
 				cb(handlers);
 			}
@@ -157,22 +159,20 @@ exports.Deck = new Class({
 	},
 	
 	describe: function() {
-		var d = '';
-		Object.each(this.cards, function(supply, name) {
-			d += name + ' (' + (new cards[name]().cost) + '): ' + supply.length + '\n';
-		});
-		return d;
+		return 'bank: ' + Object.reduce(this.cards, function(a, supply, name) {
+			return (a ? a + ',' : '') + name + ' ' + supply.length;
+		}) + '\n';
 	},
 	
 	describeTrash: function() {
-		var d = '';
-		this.trashed.each(function(card) {
-			d += card.name + '\n';
-		});
-		if(d == '') {
-			d = 'the trash is empty\n';
+		if(this.trashed.length > 0) {
+			return 'trash: ' + this.trashed.each(function(x, v, k) {
+				return (x ? x + ',' : '') + v.name;
+			});
 		}
-		return d;
+		else {
+			return 'the trash is empty\n';
+		}
 	}
 });
 
@@ -260,7 +260,7 @@ cards.chapel = new Class({
 	cost: 2,
 	doAction: function(turn, done) {
 		var count = 0;
-		turn.handler.message('choose up to 4 cards to trash\nskip when you are done\n');
+		turn.handler.message('choose up to 4 cards to trash, skip when you are done\n');
 		turn.handler.nextData = function(cardname) {
 			if(cardname != 'skip') {
 				if(turn.player.hand.some(function(card) {
@@ -755,6 +755,7 @@ cards.militia = new Class({
 	doAction: function(turn, done) {
 		turn.addTreasure(2);
 		this.attackedHandlers(turn, function(others) {
+			clearTimeout(turn.timeout);
 			turn.handler.nextData = function() {
 				turn.handler.message('waiting for other players');
 				return true;
@@ -763,6 +764,7 @@ cards.militia = new Class({
 			var check = function() {
 				if(count == 0) {
 					turn.handler.nextData = false;
+					turn.resetTimeout();
 					done();
 				}
 			}
@@ -945,7 +947,7 @@ cards.mine = new Class({
 						return true;
 					}
 				})) {
-					turn.handler.message('that card in unavailable\n');
+					turn.handler.message('that card is unavailable\n');
 					return true;
 				}
 				return false;

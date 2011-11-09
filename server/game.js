@@ -9,6 +9,45 @@ String.prototype.possessive = function() {
 	return this + '\'';
 };
 
+Array.prototype.reduce = function(joinfunc, offset) {
+	if(offset) {
+		if(this.length > offset) {
+			return joinfunc(this[offset], this.reduce(joinfunc, offset + 1));
+		}
+		else {
+			return null;
+		}
+	}
+	if(this.length == 0) {
+		return null;
+	}
+	else if(this.length == 1) {
+		return joinfunc(this[0]);
+	}
+	else if(this.length == 2) {
+		return joinfunc(this[0], this[1]);
+	}
+	else {
+		return joinfunc(this[0], this.reduce(joinfunc, 1));
+	}
+};
+
+Array.prototype.reduce = function(joinfunc, t) {
+	var x;
+	this.each(function(v, k) {
+		x = joinfunc(x, v, k);
+	}, t);
+	return x;
+};
+
+Object.prototype.reduce = function(obj, joinfunc, t) {
+	var x;
+	Object.each(obj, function(v, k) {
+		x = joinfunc(x, v, k);
+	}, t);
+	return x;
+};
+
 var gamenum = 0, opengame;
 
 var Game = new Class({
@@ -446,22 +485,22 @@ exports.PlayerHandler = new Class({
 		var some, type;
 		switch(commands[1]) {
 			case 'hand':
-				some = false;
-				this.player.hand.each(function(card) {
-					this.message(card.name + '\n');
-					some = true;
-				}, this);
-				if(!some) {
+				if(this.player.hand.length > 0) {
+					this.message('hand: ' + this.player.hand.reduce(function(x, v, k) {
+						return (x ? x + ',' : '') + v.name;
+					}) + '\n');
+				}
+				else {
 					this.message('you have no cards in your hand\n');
 				}
 				return true;
 			case 'table':
-				some = false;
-				this.player.table.each(function(card) {
-					this.message(card.name + '\n');
-					some = true;
-				}, this);
-				if(!some) {
+				if(this.player.table.length > 0) {
+					this.message('table: ' + this.player.hand.reduce(function(x, v, k) {
+						return (x ? x + ',' : '') + v.name;
+					}) + '\n');
+				}
+				else {
 					this.message('you haven\'t played any cards yet\n');
 				}
 				return true;

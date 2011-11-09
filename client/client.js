@@ -2,12 +2,8 @@ require('./mootools.js');
 var cn = require('./connection.js');
 
 exports.Client = new Class({
-	initialize: function() {
-		
-	},
-	
-	finish: function(e) {
-		
+	initialize: function(handler) {
+		this.handler = handler;
 	},
 	
 	connect: function(host) {
@@ -21,7 +17,6 @@ exports.Client = new Class({
 	
 	start: function(cb) {
 		this.message('start');
-		
 	},
 	
 	message: function(message) {
@@ -32,40 +27,197 @@ exports.Client = new Class({
 	
 	connected: function() {
 		this.connected = true;
+		this.handler.connected();
 	},
 	
-	handlers: {
-		'what is your name?': function() {
-			this.getName(this.message.bind(this));
-			return true;
+	handlers: [
+		{
+			match: function(l) {
+				return l == 'what is your name?';
+			},
+			handle: function() {
+				this.handler.getName(this.message.bind(this));
+			}
 		},
-		'Bye': function() {
-			//this.end();
-			return true;
+		{
+			match: function(l) {
+				return l == 'Bye';
+			}
+			handle: function() {
+				
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'the game has started';
+			},
+			handle: function() {
+				this.handler.startGame();
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('bank:') === 0;
+			},
+			handle: function(l) {
+				var cs = l.substring(6).split(',');
+				var cards = {};
+				cs.each(function(part) {
+					var ps = part.split(' ');
+					cards[ps[0]] = parseInt(ps[1]);
+				});
+				this.handler.bank(cards);
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('you drew a') === 0;
+			},
+			handle: function(l) {
+				this.handler.drew(l.substr(l.lastIndexOf(' ') + 1));
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'you shuffled your cards';
+			}
+			handle: function(l) {
+				this.handler.shuffled();
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'it\'s your turn';
+			},
+			handle: function(l) {
+				this.handler.startTurn();
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('hand:') === 0;
+			},
+			handle: function(l) {
+				this.handler.hand(l.substr(6).split(','));
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('actions:') === 0;
+			},
+			handle: function(l) {
+				this.handler.actions(parseInt(l.substr(9)));
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('buys:') === 0;
+			},
+			handle: function(l) {
+				this.handler.actions(parseInt(l.substr(6)));
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('cash:') === 0;
+			},
+			handle: function(l) {
+				this.handler.actions(parseInt(l.substr(6)));
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'your turn has finished';
+			},
+			handle: function(l) {
+				this.handler.finishTurn();
+			}
 		}
-		
-	},
+	],
 	
 	line: function(line) {
-		var handled = false;
-		if(this.handlers[line]) {
-			handled = this.handlers[line].apply(this);
-		}
-		if(handled) {
-			this.handled(line);
+		if(this.handlers.some(function(handler) {
+			if(handler.match(l)) {
+				handler.handle(l);
+				return true;
+			}
+		})) {
+			this.handler.handled(line);
 		}
 		else {
-			this.unhandled(line);
+			this.handler.unhandled(line);
 		}
 	},
 	
 	error: function(e) {
 		this.connected = false;
-		this.finish(e);
+		this.handler.finish(e);
 	},
 	
 	end: function() {
 		this.connected = false;
-		this.finish();
+		this.handler.finish();
+	}
+});
+
+var ClientHandler = new Class({
+	connected: function() {
+		
+	},
+	
+	getName: function(cb) {
+		
+	},
+	
+	startGame: function() {
+		
+	},
+	
+	bank: function(cards) {
+		
+	},
+	
+	drew: function(card) {
+		
+	},
+	
+	shuffled: function() {
+		
+	},
+	
+	startTurn: function() {
+		
+	},
+	
+	hand: function() {
+		
+	},
+	
+	actions: function() {
+		
+	},
+	
+	buys: function() {
+		
+	},
+	
+	cash: function() {
+		
+	},
+	
+	finishTurn: function() {
+		
+	},
+	
+	finish: function(e) {
+		
+	},
+	
+	handled: function(l) {
+		//console.log(l);
+	},
+	
+	unhandled: function(l) {
+		//console.log('>' + l.replace(/\n/g, '\\n'));
 	}
 });
