@@ -1,83 +1,37 @@
-var client = require('./../client.js');
+var ai = require('./../basicai.js');
 var theCards = require('./../../server/cards.js');
 var rl = require('readline');
 
-exports.name = 'simple';
-exports.Client = new Class({
-	Extends: client.ClientHandler,
+var handler = new Class({
+	Extends: ai.BasicClientHandler,
 	
-	status: {},
-	
-	initialize: function(host, autostart, handled, unhandled) {
-		this.host = host;
-		this.autostart = autostart;
-		this.printHandled = handled;
-		this.printUnhandled = unhandled;
+	cash: function() {
+		this.parent.apply(this, arguments);
+		this.ai.choosebuy();
 	},
 	
-	init: function() {
-		if(this.host) {
-			this.client.connect(this.host);
+	canbuy: function(cards) {
+		this.parent.apply(this, arguments);
+		this.ai.canbuy(cards);
+	}
+});
+
+var name = 'simple';
+
+exports.AI = new Class({
+	Extends: ai.BasicAI,
+	
+	handler: handler,
+	name: name,
+	supportedActions: [],
+	
+	choosebuy: function() {
+		if(this.status.buys > 0) {
+			this.client.canbuy();
 		}
 		else {
-			this.rl = rl.createInterface(process.stdin, process.stdout, null);
-			this.rl.question("What is the host address?\n", function(host) {
-				this.client.connect(host);
-			}.bind(this));
+			this.client.done();
 		}
-	},
-	
-	namecount: 0,
-	
-	getName: function(cb, invalid) {
-		if(invalid) {
-			this.myname = exports.name + this.namecount++;
-		}
-		else {
-			this.myname = exports.name;
-		}
-		cb(this.myname);
-	},
-	
-	welcome: function() {
-		if(this.autostart) {
-			this.startGameTimeout = this.client.start.delay(3000, this.client);
-		}
-		this.emit('welcome');
-	},
-	
-	startGame: function() {
-		clearTimeout(this.startGameTimeout);
-		this.gameStarted = true;
-		this.status.hand = [];
-	},
-	
-	startTurn: function() {
-		this.client.canbuy();
-	},
-	
-	bank: function(cards) {
-		this.status.bank = cards;
-	},
-	
-	drew: function(card) {
-		this.status.hand.push(card);
-	},
-	
-	hand: function(cards) {
-		this.status.hand = cards;
-	},
-	
-	actions: function(actions) {
-		this.status.actions = actions;
-	},
-	
-	buys: function(buys) {
-		this.status.buys = buys;
-	},
-	
-	cash: function(cash) {
-		this.status.cash = cash;
 	},
 	
 	canbuy: function(cards) {
@@ -88,49 +42,16 @@ exports.Client = new Class({
 				highest = card;
 				highestCost = c.cost;
 			}
-		});
+		}, this);
 		if(highest) {
+			this.status.buys--;
 			this.client.buy(highest);
+			this.choosebuy();
 		}
 		else {
 			this.client.done();
 		}
-	},
-	
-	finishTurn: function() {
-		this.status.hand = [];
-	},
-	
-	winner: function(name) {
-		if(name == this.myname) {
-			this.won = true;
-		}
-		else {
-			this.won = false;
-		}
-		this.emit('won', this.won);
-	},
-	
-	finish: function(e) {
-		if(e) {
-			console.log(e);
-		}
-		//console.log('Bye');
-		if(this.rl) {
-			this.rl.close();
-			process.stdin.destroy();
-		}
-	},
-	
-	handled: function(l) {
-		if(this.printHandled) {
-			console.log('!' + l.replace(/\n/g, '\\n'));
-		}
-	},
-		
-	unhandled: function(l) {
-		if(this.printUnhandled) {
-			console.log('>' + l.replace(/\n/g, '\\n'));
-		}
 	}
 });
+
+exports.AI.aiName = name;

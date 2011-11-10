@@ -4,29 +4,23 @@ var simplenocoppernoestate = require('./simple/simplenocoppernoestate.js');
 var simplenocopperonlyprovince = require('./simple/simplenocopperonlyprovince.js');
 var simplenocopperfirstprovince = require('./simple/simplenocopperfirstprovince.js');
 var randomactions = require('./easyactions/randomactions.js');
-var client = require('./client.js');
 
 var host = 'localhost';
 
-var handlers = {};
-
-handlers[simple.name] = simple.Client;
-handlers[simplenocopper.name] = simplenocopper.Client;
-handlers[simplenocoppernoestate.name] = simplenocoppernoestate.Client;
-handlers[simplenocopperonlyprovince.name] = simplenocopperonlyprovince.Client;
-handlers[simplenocopperfirstprovince.name] = simplenocopperfirstprovince.Client;
-handlers[randomactions.name] = randomactions.Client;
-
-var handlersLength = Object.getLength(handlers);
+var handlers = [
+	simple.AI,
+	simplenocopper.AI,
+	simplenocoppernoestate.AI,
+	simplenocopperonlyprovince.AI,
+	simplenocopperfirstprovince.AI,
+	randomactions.AI
+];
 
 wins = {};
-Object.each(handlers, function(h, name) {
-	wins[name] = 0;
-});
-
 played = {};
-Object.each(handlers, function(h, name) {
-	played[name] = 0;
+handlers.each(function(h) {
+	wins[h.aiName] = 0;
+	played[h.aiName] = 0;
 });
 
 playersInGames = {
@@ -41,29 +35,27 @@ var starts = gamesToRun;
 var finishes = gamesToRun;
 
 var start = function() {
-	console.log('games left to start: ' + starts--);
-	
-	var thisgame = {};
-	var possible = Object.keys(handlers);
-	var name, chosen = 0;
+	console.log('games left to start: ' + --starts);
+	//choose number of players
 	var players = 2 + Math.floor(Math.random() * 3);
 	playersInGames[players]++;
+	
+	//choose players
+	var gameplayers = [];
+	var chosen = 0, i, h, num = 0;
 	do {
 		chosen++;
-		i = Math.floor(Math.random() * possible.length);
-		name = possible.splice(i, 1)[0];
-		played[name]++;
-		for(i = 0;i < 10;i++) {
-			thisgame[name] = handlers[name];
-		}
+		i = Math.floor(Math.random() * handlers.length);
+		h = handlers[i];
+		played[h.aiName]++;
+		gameplayers.push(h);
 	}
 	while(chosen < players);
-	thisgameLength = Object.getLength(thisgame);
 	
-	var count = thisgameLength;
 	
-	var check = function() {
-		if(--count == 0) {
+	var ended = gameplayers.length;
+	var checkEnded = function() {
+		if(--ended == 0) {
 			console.log('games left to finish ' + finishes);
 			if(--finishes == 0) {
 				finish();
@@ -71,32 +63,27 @@ var start = function() {
 		}
 	};
 	
-	var readys = thisgameLength;
-	
-	var ready = function() {
+	var readys = gameplayers.length;
+	var checkReady = function() {
 		if(--readys == 0) {
-			running[0].client.start();
+			ais[0].client.start();
 			if(starts > 0) {
 				start();
 			}
 		}
 	};
 	
-	var running = [];
-	Object.each(thisgame, function(h, name) {
-		var r = new h(host);
-		r.on('welcome', ready);
-		r.on('won', function(won) {
+	var ais = [];
+	gameplayers.each(function(h) {
+		var ai = new h(host);
+		ai.on('welcome', checkReady);
+		ai.on('won', function(won) {
 			if(won) {
-				wins[name]++;
+				wins[h.aiName]++;
 			}
-			check();
+			checkEnded();
 		});
-		running.push(r);
-	});
-	
-	running.each(function(r) {
-		new client.Client(r);
+		ais.push(ai);
 	});
 };
 
@@ -114,6 +101,5 @@ var finish = function() {
 		console.log(val + ' ' + key + ' player games');
 	});
 };
-
 
 start();

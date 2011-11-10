@@ -1,12 +1,9 @@
 require('./mootools.js');
 var cn = require('./connection.js');
-var event = require('events');
 
 exports.Client = new Class({
 	initialize: function(handler) {
 		this.handler = handler;
-		handler.client = this;
-		handler.init();
 	},
 	
 	connect: function(host) {
@@ -250,6 +247,22 @@ exports.Client = new Class({
 			handle: function(l) {
 				this.handler.finishTurn();
 			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('you played a ') === 0;
+			},
+			handle: function(l) {
+				this.handler.played(l.substr(l.lastIndexOf(' ') + 1));
+			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('you finished playing ') === 0;
+			},
+			handle: function(l) {
+				this.handler.finishedplaying(l.substr(l.lastIndexOf(' ') + 1));
+			}
 		}
 	],
 	
@@ -279,11 +292,6 @@ exports.Client = new Class({
 });
 
 exports.ClientHandler = new Class({
-	Extends: event.EventEmitter,
-	
-	init: function() {
-		
-	},
 	
 	connected: function() {
 		
@@ -355,6 +363,18 @@ exports.ClientHandler = new Class({
 	
 	playmoat: function(cb) {
 		cb(true);
+	},
+	
+	played: function(card) {
+		
+	},
+	
+	finishedplaying: function(card) {
+		
+	},
+	
+	canbuy: function(cards) {
+		
 	},
 	
 	finishTurn: function() {
