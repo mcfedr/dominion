@@ -8,14 +8,15 @@ var SimpleClient = new Class({
 	status: {},
 	
 	initialize: function() {
-		//this.rl = rl.createInterface(process.stdin, process.stdout, null);
-		//this.rl.question("What is the host address?\n", function(host) {
-		//	this.client.connect(host);
-		//}.bind(this));
+		
 	},
 	
 	init: function() {
 		this.client.connect('localhost');
+		//this.rl = rl.createInterface(process.stdin, process.stdout, null);
+		//this.rl.question("What is the host address?\n", function(host) {
+		//	this.client.connect(host);
+		//}.bind(this));
 	},
 	
 	namecount: 0,
