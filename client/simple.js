@@ -1,66 +1,86 @@
 var client = require('./client.js');
-var cards = require('./../server/cards.js');
+var theCards = require('./../server/cards.js');
+var rl = require('readline');
 
 var SimpleClient = new Class({
 	Extends: client.ClientHandler,
 	
+	status: {},
+	
 	initialize: function() {
-		this.rli = rl.createInterface(process.stdin, process.stdout, null);
-		this.rli.question("What is the host address?\n", function(host) {
-			this.client.connect(host);
-		}.bind(this));
+		//this.rl = rl.createInterface(process.stdin, process.stdout, null);
+		//this.rl.question("What is the host address?\n", function(host) {
+		//	this.client.connect(host);
+		//}.bind(this));
 	},
 	
-	getName: function(cb) {
-		cb('simple');
+	init: function() {
+		this.client.connect('localhost');
 	},
 	
-	startGame: function() {
-		this.gameStarted = true;
-		this.hand = [];
-	},
+	namecount: 0,
 	
-	startTurn: function() {
-		this.startTurnWaiting = true;
-	},
-	
-	emptyLine: function() {
-		if(this.startTurnWaiting) {
-			this.startTurnWaiting = false;
-			this.client.canbuy();
+	getName: function(cb, invalid) {
+		if(invalid) {
+			cb('simple' + this.namecount++);
+		}
+		else {
+			cb('simple');
 		}
 	},
 	
+	welcome: function() {
+		this.startGameTimeout = this.client.start.delay(3000, this.client);
+	},
+	
+	startGame: function() {
+		clearTimeout(this.startGameTimeout);
+		this.gameStarted = true;
+		this.status.hand = [];
+	},
+	
+	startTurn: function() {
+		this.client.canbuy();
+	},
+	
 	bank: function(cards) {
-		this.bank = cards;
+		this.status.bank = cards;
 	},
 	
 	drew: function(card) {
-		this.hand.push(card);
+		this.status.hand.push(card);
 	},
 	
 	hand: function(cards) {
-		this.hand = cards;
+		this.status.hand = cards;
 	},
 	
 	actions: function(actions) {
-		this.actions = actions;
+		this.status.actions = actions;
 	},
 	
 	buys: function(buys) {
-		this.buys = buys;
+		this.status.buys = buys;
 	},
 	
 	cash: function(cash) {
-		this.cash = cash;
+		this.status.cash = cash;
 	},
 	
 	canbuy: function(cards) {
-		
+		var highest, highestCost = -1;
+		cards.each(function(card) {
+			var c = theCards.getCard(card);
+			if(c.cost > highestCost && (c.treasure > 0 || c.points > 0 || c.getPoints)) {
+				highest = card;
+				highestCost = c.cost;
+			}
+		});
+		this.client.buy(highest);
 	},
 	
 	finishTurn: function() {
-		this.hand = [];
+		this.status.hand = [];
 	},
 	
 	finish: function(e) {
@@ -68,8 +88,12 @@ var SimpleClient = new Class({
 			console.log(e);
 		}
 		console.log('Bye');
-		this.rli.close();
+		//this.rl.close();
 		process.stdin.destroy();
+	},
+	
+	handled: function(l) {
+		//console.log('!' + l.replace(/\n/g, '\\n'));
 	},
 		
 	unhandled: function(l) {

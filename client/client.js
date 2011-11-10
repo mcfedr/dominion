@@ -5,6 +5,7 @@ exports.Client = new Class({
 	initialize: function(handler) {
 		this.handler = handler;
 		handler.client = this;
+		handler.init();
 	},
 	
 	connect: function(host) {
@@ -62,8 +63,24 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
-				return l == 'Bye';
+				return l == 'that is not a valid name';
+			},
+			handle: function() {
+				this.handler.getName(this.message.bind(this), true);
 			}
+		},
+		{
+			match: function(l) {
+				return l.indexOf('welcome') === 0;
+			},
+			handle: function() {
+				this.handler.welcome();
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'Bye';
+			},
 			handle: function() {
 				
 			}
@@ -100,8 +117,16 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
-				return l == 'you shuffled your cards';
+				return l.indexOf('you gained a') === 0;
+			},
+			handle: function(l) {
+				this.handler.gain(l.substr(l.lastIndexOf(' ') + 1));
 			}
+		},
+		{
+			match: function(l) {
+				return l == 'you shuffled your cards';
+			},
 			handle: function(l) {
 				this.handler.shuffled();
 			}
@@ -172,17 +197,17 @@ exports.Client = new Class({
 		}
 	],
 	
-	line: function(line) {
+	line: function(l) {
 		if(this.handlers.some(function(handler) {
 			if(handler.match(l)) {
-				handler.handle(l);
+				handler.handle.call(this, l);
 				return true;
 			}
-		})) {
-			this.handler.handled(line);
+		}, this)) {
+			this.handler.handled(l);
 		}
 		else {
-			this.handler.unhandled(line);
+			this.handler.unhandled(l);
 		}
 	},
 	
@@ -197,12 +222,20 @@ exports.Client = new Class({
 	}
 });
 
-var ClientHandler = new Class({
+exports.ClientHandler = new Class({
+	init: function() {
+		
+	},
+	
 	connected: function() {
 		
 	},
 	
-	getName: function(cb) {
+	getName: function(cb, invalid) {
+		
+	},
+	
+	welcome: function() {
 		
 	},
 	
@@ -239,6 +272,10 @@ var ClientHandler = new Class({
 	},
 	
 	cash: function(cash) {
+		
+	},
+	
+	gain: function(card) {
 		
 	},
 	

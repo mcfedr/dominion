@@ -98,12 +98,14 @@ var Game = new Class({
 	},
 	
 	turn: function() {
-		if(this.handlers.length > 0) {
-			this.currentPlayer = (this.currentPlayer + 1) % this.handlers.length;
-			var turn = new Turn(this, this.handlers[this.currentPlayer], this.turn.bind(this));
-		}
-		else {
-			this.end();
+		if(!this.ended) {
+			if(this.handlers.length > 0) {
+				this.currentPlayer = (this.currentPlayer + 1) % this.handlers.length;
+				var turn = new Turn(this, this.handlers[this.currentPlayer], this.turn.bind(this));
+			}
+			else {
+				this.end();
+			}
 		}
 	},
 	
@@ -171,7 +173,9 @@ var Game = new Class({
 	},
 	
 	checkEnd: function() {
-		if(this.deck.shouldEnd()) {
+		var should = this.deck.shouldEnd();
+		if(should) {
+			this.message('the game finished because ' + should + '\n');
 			var winner = 'nobody', winningScore = 0;
 			this.handlers.each(function(h) {
 				var s = h.player.score();
@@ -181,7 +185,7 @@ var Game = new Class({
 				}
 				this.message(h.player.name + ': ' + s + '\n');
 			}, this);
-			this.message('The winner is ' + winner + '\n');
+			this.message('the winner is ' + winner + '\n');
 			this.end();
 			return true;
 		}
@@ -193,7 +197,7 @@ var Game = new Class({
 		this.ended = true;
 		this.message('the game has finished\n');
 		this.handlers.each(function(h) {
-			h.end();
+			h.end.delay(0, h);
 		});
 	}
 });
@@ -376,15 +380,17 @@ var Turn = new Class({
 		}
 	},
 	
-	end: function() {
+	end: function(gameend) {
 		clearTimeout(this.timeout);
-		this.handler.message('your turn has finished\n');
-		this.game.message(this.player.name + ' has finished his turn\n', this.handler);
+		if(!gameend) {
+			this.handler.message('your turn has finished\n');
+			this.game.message(this.player.name + ' has finished his turn\n', this.handler);
+			this.player.discardHand();
+			this.player.draw();
+			this.after.delay(0);
+		}
 		this.ended = true;
-		this.player.discardHand();
-		this.player.draw();
 		this.handler.turn = null;
-		this.after.delay(0);
 	}
 });
 
@@ -400,18 +406,21 @@ exports.PlayerHandler = new Class({
 		socket.on('error', this.remove.bind(this));
 		
 		this.nextData = function(name) {
-			if(name && name.search(/^\w+$/) != -1) {
+			if(!opengame || opengame.started) {
+				opengame = new Game(this.log);
+			}
+			if(name && name.search(/^\w+$/) != -1 && !opengame.handlers.some(function(handler) {
+				return handler.player.name == name;
+			})) {
 				this.player = new player.Player(name);
 				this.player.handler = this;
-				if(!opengame || opengame.started) {
-					opengame = new Game(this.log);
-				}
+				
 				opengame.handlers.push(this);
 				this.game = opengame;
 				this.log(this.player.name + '--connected');
-				this.message('welcome ' + this.player.name + '\n'
-					+ 'you have joined game ' + this.game.gamenum+ '\n'
-					+ 'type help for a list of commands\n\n');
+				this.message('welcome ' + this.player.name + ', '
+					+ 'you have joined game ' + this.game.gamenum+ ', '
+					+ 'type help for a list of commands\n');
 				this.game.checkStart();
 				return false;
 			}
@@ -567,7 +576,7 @@ exports.PlayerHandler = new Class({
 		if(this.player) {
 			this.log(this.player.name + '--disconnected');
 			if(this.turn) {
-				this.turn.end();
+				this.turn.end(true);
 			}
 			this.game.handlers.erase(this);
 		}

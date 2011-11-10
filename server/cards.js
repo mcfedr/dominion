@@ -155,7 +155,7 @@ exports.Deck = new Class({
 			}
 			return false;
 		});
-		return some || empties >= 3;
+		return some ? 'all the provinces have been bought' : empties >= 3 ? 'three piles are empty' : false;
 	},
 	
 	describe: function() {
@@ -180,6 +180,20 @@ exports.describe = function(card) {
 	if(cards[card]) {
 		var c = new cards[card]();
 		return c.name + ' (' + c.cost + ')\n' + c.description;
+	}
+	return false;
+};
+
+exports.getCost = function(card) {
+	if(cards[card]) {
+		return new cards[card]().cost;
+	}
+	return false;
+};
+
+exports.getCard = function(card) {
+	if(cards[card]) {
+		return new cards[card]();
 	}
 	return false;
 };
