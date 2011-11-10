@@ -579,6 +579,7 @@ exports.PlayerHandler = new Class({
 				this.turn.end(true);
 			}
 			this.game.handlers.erase(this);
+			this.player = null;
 		}
 	}
 });
