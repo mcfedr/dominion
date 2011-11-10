@@ -108,7 +108,10 @@ var Player = exports.Player = new Class({
 	playsMoat: function(cb, handler) {
 		if(!this.hand.some(function(card) {
 			if(card.name == 'moat') {
+				var timeout = cb.delay(5000, this, [false]);
+				this.handler.message('moat: do you want to play your moat\n');
 				this.handler.nextData = function(reply) {
+					clearTimeout(timeout);
 					if(reply == 'yes') {
 						this.handler.game.message(this.name + ' played a moat\n', this.handler);
 						cb(true);
@@ -117,7 +120,6 @@ var Player = exports.Player = new Class({
 						cb(false);
 					}
 				}.bind(this);
-				this.handler.message('do you want to play your moat\n');
 				return true;
 			}
 			return false;

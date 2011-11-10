@@ -171,7 +171,7 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
-				return l == 'do you want to play your moat';
+				return l == 'moat: do you want to play your moat';
 			},
 			handle: function(l) {
 				this.handler.playmoat(function(yes) {
