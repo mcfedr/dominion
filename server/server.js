@@ -3,14 +3,14 @@ var game = require('./game.js');
 var fs = require('fs');
 
 //var logstr = fs.createWriteStream('log', {flags: 'a'});
-var logbuff = [];
+//var logbuff = [];
 var log = function(m) {
 	//logstr.write(m + '\n');
-	console.log(m);
-	logbuff.push(m);
-	if(logbuff.length > 500) {
-		logbuff.shift();
-	}
+	//console.log(m);
+	//logbuff.push(m);
+	//if(logbuff.length > 500) {
+	//	logbuff.shift();
+	//}
 };
 
 var server = net.createServer(function(socket) {

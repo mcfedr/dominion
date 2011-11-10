@@ -183,7 +183,7 @@ var Game = new Class({
 					winner = h.player.name;
 					winningScore = s;
 				}
-				this.message(h.player.name + ': ' + s + '\n');
+				this.message(h.player.name + ': ' + s + ' (turns: ' + h.player.turns + ')\n');
 			}, this);
 			this.message('the winner is ' + winner + '\n');
 			this.end();
@@ -209,6 +209,7 @@ var Turn = new Class({
 		this.handler = handler;
 		this.after = after;
 		this.player = this.handler.player;
+		this.player.turns++;
 		this.actions = 1;
 		this.buys = 1;
 		this.spent = 0;
@@ -556,16 +557,28 @@ exports.PlayerHandler = new Class({
 	
 	message: function(message) {
 		if(!this.ended) {
-			if(this.player && message != '' && message != '\n') {
-				this.log(this.player.name + '->' + message.replace(/\n/g, '\\n'));
+			try {
+				if(this.player && message != '' && message != '\n') {
+					this.log(this.player.name + '->' + message.replace(/\n/g, '\\n'));
+				}
+				this.socket.write(message);
 			}
-			this.socket.write(message);
+			catch(e) {
+				
+			}
 		}
 	},
 	
 	end: function() {
-		this.socket.end('Bye\n');
-		this.remove();
+		if(!this.ended) {
+			try {
+				this.socket.end('Bye\n');
+				this.remove();
+			}
+			catch(e) {
+				
+			}
+		}
 	},
 	
 	remove: function() {

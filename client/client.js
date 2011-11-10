@@ -1,5 +1,6 @@
 require('./mootools.js');
 var cn = require('./connection.js');
+var event = require('events');
 
 exports.Client = new Class({
 	initialize: function(handler) {
@@ -19,6 +20,10 @@ exports.Client = new Class({
 	
 	start: function(cb) {
 		this.message('start');
+	},
+	
+	done: function(cb) {
+		this.message('done');
 	},
 	
 	play: function(card) {
@@ -173,6 +178,14 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
+				return l.indexOf('the winner is') === 0;
+			},
+			handle: function(l) {
+				this.handler.winner(l.substr(l.lastIndexOf(' ') + 1));
+			}
+		},
+		{
+			match: function(l) {
 				return l.indexOf('buys:') === 0;
 			},
 			handle: function(l) {
@@ -223,6 +236,8 @@ exports.Client = new Class({
 });
 
 exports.ClientHandler = new Class({
+	Extends: event.EventEmitter,
+	
 	init: function() {
 		
 	},
@@ -288,6 +303,10 @@ exports.ClientHandler = new Class({
 	},
 	
 	finish: function(e) {
+		
+	},
+	
+	winner: function(name) {
 		
 	},
 	

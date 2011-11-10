@@ -6,6 +6,7 @@ var Player = exports.Player = new Class({
 	discard: [],
 	hand: [],
 	table: [],
+	turns: 0,
 	
 	initialize: function(name) {
 		this.name = name;
