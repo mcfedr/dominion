@@ -3,6 +3,7 @@ var simplenocopper = require('./simple/simplenocopper.js');
 var simplenocoppernoestate = require('./simple/simplenocoppernoestate.js');
 var simplenocopperonlyprovince = require('./simple/simplenocopperonlyprovince.js');
 var simplenocopperfirstprovince = require('./simple/simplenocopperfirstprovince.js');
+var randomactions = require('./easyactions/randomactions.js');
 var client = require('./client.js');
 
 var host = 'localhost';
@@ -14,6 +15,7 @@ handlers[simplenocopper.name] = simplenocopper.Client;
 handlers[simplenocoppernoestate.name] = simplenocoppernoestate.Client;
 handlers[simplenocopperonlyprovince.name] = simplenocopperonlyprovince.Client;
 handlers[simplenocopperfirstprovince.name] = simplenocopperfirstprovince.Client;
+handlers[randomactions.name] = randomactions.Client;
 
 var handlersLength = Object.getLength(handlers);
 
@@ -39,7 +41,7 @@ var starts = gamesToRun;
 var finishes = gamesToRun;
 
 var start = function() {
-	console.log('starting game ' + starts--);
+	console.log('games left to start: ' + starts--);
 	
 	var thisgame = {};
 	var possible = Object.keys(handlers);
@@ -62,6 +64,7 @@ var start = function() {
 	
 	var check = function() {
 		if(--count == 0) {
+			console.log('games left to finish ' + finishes);
 			if(--finishes == 0) {
 				finish();
 			}

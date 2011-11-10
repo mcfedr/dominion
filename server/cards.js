@@ -434,6 +434,7 @@ cards.festival = new Class({
 	name: 'festival',
 	description: '+2 Actions\n+1 Buy\n+2 Treasure',
 	cost: 5,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.addActions(2);
 		turn.addBuys();
@@ -449,6 +450,7 @@ cards.laboratory = new Class({
 	name: 'laboratory',
 	description: '+2 Cards\n+1 Action',
 	cost: 5,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.player.draw(2);
 		turn.addActions();
@@ -573,6 +575,7 @@ cards.adventurer = new Class({
 	description: 'Reveal cards from your deck until you reveal 2 Treasure cards.\n'
 		+ 'Put these treasure cards into your hand and discard the other revealed cards.',
 	cost: 6,
+	simple: true,
 	doAction: function(turn, done) {
 		var c, count = 0;
 		var hasMoreTreasure = function() {
@@ -666,6 +669,7 @@ cards.councilroom = new Class({
 	name: 'councilroom',
 	description: '+4 Cards\n+1 Buy\nEach other player draws a card',
 	cost: 5,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.player.draw(4);
 		turn.game.handlers.each(function(h) {
@@ -722,6 +726,7 @@ actionCards.push(cards.cellar);
 cards.moat = new Class({
 	Extends: Card,
 	name: 'moat',
+	simple: true,
 	description: '+2 Cards\nWhen another player plays an Attack card, you may\n'
 		+ 'reveal this from your hand. If you do, you are unaffected by that Attack.',
 	cost: 2,
@@ -738,6 +743,7 @@ cards.village = new Class({
 	name: 'village',
 	description: '+1 Card\n+2 Actions',
 	cost: 3,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.player.draw(1);
 		turn.addActions(2);
@@ -752,6 +758,7 @@ cards.woodcutter = new Class({
 	name: 'woodcutter',
 	description: '+1 Buy\n+2 Treaure',
 	cost: 3,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.addBuys();
 		turn.addTreasure(2);
@@ -979,6 +986,7 @@ cards.smithy = new Class({
 	name: 'smithy',
 	description: '+3 Cards',
 	cost: 4,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.player.draw(3);
 		done();
@@ -992,6 +1000,7 @@ cards.market = new Class({
 	name: 'market',
 	description: '+1 Card\n+1 Action\n+1 Buy\n+1 Treasure',
 	cost: 5,
+	simple: true,
 	doAction: function(turn, done) {
 		turn.player.draw(1);
 		turn.addActions();

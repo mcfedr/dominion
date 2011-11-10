@@ -38,6 +38,10 @@ exports.Client = new Class({
 		this.message('show canbuy');
 	},
 	
+	hand: function() {
+		this.message('show hand');
+	},
+	
 	message: function(message) {
 		if(this.connected) {
 			this.connection.message(message + '\n');
@@ -170,6 +174,21 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
+				return l == 'do you want to play your moat';
+			},
+			handle: function(l) {
+				this.handler.playmoat(function(yes) {
+					if(yes) {
+						this.message('yes');
+					}
+					else {
+						this.message('no');
+					}
+				}.bind(this));
+			}
+		},
+		{
+			match: function(l) {
 				return l.indexOf('actions:') === 0;
 			},
 			handle: function(l) {
@@ -198,6 +217,30 @@ exports.Client = new Class({
 			},
 			handle: function(l) {
 				this.handler.cash(parseInt(l.substr(6)));
+			}
+		},
+		{
+			match: function(l) {
+				return l.search(/you have \d+ more buys?/) != -1;
+			},
+			handle: function(l) {
+				this.handler.morebuys(l.match(/you have (\d+) more buys?/)[1]);
+			}
+		},
+		{
+			match: function(l) {
+				return l.search(/you have \d+ more actions?/) != -1;
+			},
+			handle: function(l) {
+				this.handler.moreactions(l.match(/you have (\d+) more actions?/)[1]);
+			}
+		},
+		{
+			match: function(l) {
+				return l.search(/you have \d+ more cash/) != -1;
+			},
+			handle: function(l) {
+				this.handler.morecash(l.match(/you have (\d+) more cash/)[1]);
 			}
 		},
 		{
@@ -282,11 +325,23 @@ exports.ClientHandler = new Class({
 		
 	},
 	
+	moreactions: function(count) {
+		
+	},
+	
 	buys: function(buys) {
 		
 	},
 	
+	morebuys: function(count) {
+		
+	},
+	
 	cash: function(cash) {
+		
+	},
+	
+	morecash: function(count) {
 		
 	},
 	
@@ -296,6 +351,10 @@ exports.ClientHandler = new Class({
 	
 	emptyLine: function() {
 		
+	},
+	
+	playmoat: function(cb) {
+		cb(true);
 	},
 	
 	finishTurn: function() {
