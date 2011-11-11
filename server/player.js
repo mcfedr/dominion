@@ -1,4 +1,5 @@
 require('./mootools.js');
+require('./functions.js');
 var cards = require('./cards.js');
 
 var Player = exports.Player = new Class({

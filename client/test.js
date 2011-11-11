@@ -33,13 +33,14 @@ playersInGames = {
 	4: 0
 };
 
-var gamesToRun = 100;
+var gamesToRun = 1000;
 
 var starts = gamesToRun;
 var finishes = gamesToRun;
 
 var start = function() {
-	console.log('games left to start: ' + --starts);
+	starts--;
+	//console.log('games left to start: ' + starts);
 	//choose number of players
 	var players = 2 + Math.floor(Math.random() * 3);
 	playersInGames[players]++;
@@ -56,7 +57,7 @@ var start = function() {
 	}
 	while(chosen < players);
 	
-	
+	//checks when all the players have finished
 	var ended = gameplayers.length;
 	var checkEnded = function() {
 		if(--ended == 0) {
@@ -67,10 +68,13 @@ var start = function() {
 		}
 	};
 	
+	//checks when all the players are ready to start
 	var readys = gameplayers.length;
 	var checkReady = function() {
 		if(--readys == 0) {
-			ais[0].client.start();
+			if(players < 4) {
+				ais[0].client.start();
+			}
 			if(starts > 0) {
 				start();
 			}

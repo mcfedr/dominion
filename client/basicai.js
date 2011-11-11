@@ -88,6 +88,13 @@ exports.BasicClientHandler = new Class({
 		process.exit(1);
 	},
 	
+	toolong: function(commands) {
+		console.log('toolong: (' + this.ai.name + ')');
+		console.log(commands);
+		console.log(this.ai.status);
+		process.exit(1);
+	},
+	
 	winner: function(name) {
 		if(name == this.myname) {
 			this.won = true;

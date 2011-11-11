@@ -108,6 +108,14 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
+				return l == 'you took too long and have missed your turn';
+			},
+			handle: function() {
+				this.handler.toolong(this.lastMessages);
+			}
+		},
+		{
+			match: function(l) {
 				return l == 'the game has started';
 			},
 			handle: function() {
@@ -390,6 +398,10 @@ exports.ClientHandler = new Class({
 	
 	invalidCommand: function(commands) {
 		console.log('invalid: ' + commands);
+	},
+	
+	toolong: function(commands) {
+		console.log('toolong: ' + commands);
 	},
 	
 	canbuy: function(cards) {
