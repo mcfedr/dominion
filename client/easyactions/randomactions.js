@@ -72,12 +72,17 @@ exports.AI = new Class({
 		}
 	},
 	
+	firstP: false,
+	
 	canbuy: function(cards) {
 		if(this.status.buys > 0) {
 			var highest, highestCost = -1;
 			cards.each(function(card) {
 				var c = theCards.getCard(card);
-				if(c.cost > highestCost && (c.treasure > 1 || c.points > 0 || c.getPoints || this.supportedActions.contains(card))) {
+				if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card))) {
+					if(card == 'province') {
+						this.firstP = true;
+					}
 					highest = card;
 					highestCost = c.cost;
 				}

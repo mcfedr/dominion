@@ -80,24 +80,29 @@ exports.AI = new Class({
 	firstP: false,
 	
 	canbuy: function(cards) {
-		var highest, highestCost = -1;
-		cards.each(function(card) {
-			var c = theCards.getCard(card);
-			if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card))) {
-				if(card == 'province') {
-					this.firstP = true;
+		if(this.status.buys > 0) {
+			var highest, highestCost = -1;
+			cards.each(function(card) {
+				var c = theCards.getCard(card);
+				if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card))) {
+					if(card == 'province') {
+						this.firstP = true;
+					}
+					highest = card;
+					highestCost = c.cost;
 				}
-				highest = card;
-				highestCost = c.cost;
+			}, this);
+			if(highest) {
+				this.status.buys--;
+				this.client.buy(highest);
+				this.choosebuy();
 			}
-		}, this);
-		if(highest) {
-			this.status.buys--;
-			this.client.buy(highest);
-			this.choosebuy();
+			else {
+				this.client.done();
+			}
 		}
 		else {
-			this.client.done();
+			this.choosebuy();
 		}
 	}
 });
