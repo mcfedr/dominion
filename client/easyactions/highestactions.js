@@ -44,16 +44,17 @@ exports.AI = new Class({
 	
 	chooseaction: function() {
 		if(this.status.actions > 0) {
-			var highest, highestCost = -1;
-			this.status.hand.each(function(card) {
+			var highest, highestCost = -1, highestIndex;
+			this.status.hand.each(function(card, index) {
 				var c = theCards.getCard(card);
 				if(c.cost > highestCost && c.doAction && this.supportedActions.contains(card)) {
 					highest = card;
+					highestIndex = index;
 				}
 			}, this);
 			if(highest) {
 				this.status.actions--;
-				this.status.hand.erase(highest);
+				this.status.hand.splice(highestIndex, 1);
 				this.client.play(highest);
 			}
 			else {

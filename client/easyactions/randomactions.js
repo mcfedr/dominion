@@ -15,7 +15,7 @@ var handler = new Class({
 		this.ai.canbuy(cards);
 	},
 	
-	finishedplaying: function(card) {
+	finishedplaying: function() {
 		this.parent.apply(this, arguments);
 		this.ai.chooseaction();
 	}
@@ -49,11 +49,6 @@ exports.AI = new Class({
 				if(c.doAction && this.supportedActions.contains(card)) {
 					this.status.actions--;
 					this.status.hand.splice(index, 1);
-					/*this.waitingToPlay = (function() {
-						console.log('didnt finish ' + card);
-						console.log(this.status);
-						process.exit();
-					}).delay(500, this);*/
 					this.client.play(card);
 					return true;
 				}

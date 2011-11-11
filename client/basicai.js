@@ -34,6 +34,7 @@ exports.BasicClientHandler = new Class({
 	
 	startTurn: function() {
 		this.ai.status.turn = true;
+		this.ai.emit('turn');
 	},
 	
 	finishTurn: function() {

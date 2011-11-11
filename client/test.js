@@ -4,23 +4,27 @@ var simplenocoppernoestate = require('./simple/simplenocoppernoestate.js');
 var simplenocopperonlyprovince = require('./simple/simplenocopperonlyprovince.js');
 var simplenocopperfirstprovince = require('./simple/simplenocopperfirstprovince.js');
 var randomactions = require('./easyactions/randomactions.js');
+var highestactions = require('./easyactions/highestactions.js');
 
 var host = 'localhost';
 
 var handlers = [
-	/*simple.AI,
+	simple.AI,
 	simplenocopper.AI,
 	simplenocoppernoestate.AI,
 	simplenocopperonlyprovince.AI,
-	simplenocopperfirstprovince.AI,*/
-	randomactions.AI
+	simplenocopperfirstprovince.AI,
+	randomactions.AI,
+	highestactions.AI
 ];
 
 wins = {};
 played = {};
+turns = {};
 handlers.each(function(h) {
 	wins[h.aiName] = 0;
 	played[h.aiName] = 0;
+	turns[h.aiName] = 0;
 });
 
 playersInGames = {
@@ -76,12 +80,17 @@ var start = function() {
 	var ais = [];
 	gameplayers.each(function(h) {
 		var ai = new h(host);
+		var ts = 0;
 		ai.on('welcome', checkReady);
 		ai.on('won', function(won) {
 			if(won) {
 				wins[h.aiName]++;
+				turns[h.aiName] += ts;
 			}
 			checkEnded();
+		});
+		ai.on('turn', function() {
+			ts++;
 		});
 		ais.push(ai);
 	});
@@ -92,6 +101,9 @@ var finish = function() {
 		console.log(name + ' won ' + ((wins / played[name]) * 100).round(2) + '%');
 	});
 	Object.each(wins, function(wins, name) {
+		console.log(name + ' won with ' + (turns[name] / wins).round(2) + ' cards on average');
+	});
+	/*Object.each(wins, function(wins, name) {
 		console.log(name + ' won ' + wins);
 	});
 	Object.each(wins, function(wins, name) {
@@ -99,7 +111,7 @@ var finish = function() {
 	});
 	Object.each(playersInGames, function(val, key) {
 		console.log(val + ' ' + key + ' player games');
-	});
+	});*/
 };
 
 start();
