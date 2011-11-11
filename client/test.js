@@ -33,7 +33,7 @@ playersInGames = {
 	4: 0
 };
 
-var gamesToRun = 1000;
+var gamesToRun = 100;
 
 var run = function() {
 
@@ -104,18 +104,9 @@ var run = function() {
 
 	var finish = function() {
 		Object.each(wins, function(wins, name) {
-			console.log(name + ' won ' + ((wins / played[name]) * 100).round(2) + '%');
+			console.log(name + ' won ' + ((wins / played[name]) * 100).round(2) + '% of ' + played[name]+ ' with ' + (turns[name] / wins).round(2) + ' cards on average');
 		});
-		Object.each(wins, function(wins, name) {
-			console.log(name + ' won with ' + (turns[name] / wins).round(2) + ' cards on average');
-		});
-		/*Object.each(wins, function(wins, name) {
-			console.log(name + ' won ' + wins);
-		});
-		Object.each(wins, function(wins, name) {
-			console.log(name + ' played ' + played[name]);
-		});
-		Object.each(playersInGames, function(val, key) {
+		/*Object.each(playersInGames, function(val, key) {
 			console.log(val + ' ' + key + ' player games');
 		});*/
 		run();
