@@ -29,7 +29,9 @@ exports.AI = new Class({
 		if(this.status.buys > 0) {
 			this.client.canbuy();
 		}
-		else {
+		else if(this.status.actions > 0 && this.status.hand.some(function(card) {
+			return !!theCards.getCard(card).doAction;
+		})) {
 			this.client.done();
 		}
 	},

@@ -11,44 +11,39 @@ var Card = new Class({
 	attackedHandlers: function(turn, cb) {
 		clearTimeout(turn.timeout);
 		turn.handler.nextData = function() {
-			turn.handler.message(this.name + ': waiting for other players');
+			turn.handler.message(this.name + ': waiting for other players\n');
 			return true;
 		};
-		handlers = [];
-		var start = turn.game.currentPlayer,
+		var handlers = [],
+			start = turn.game.currentPlayer,
 			i = (start + 1) % (turn.game.handlers.length);
 		while(i != start) {
 			handlers.push(turn.game.handlers[i]);
 			i = (i + 1) % (turn.game.handlers.length);
 		}
-		var handlers = turn.game.handlers.filter(function(h) {
-			return h != turn.handler;
-		});
-		var count = handlers.length;
+		var count = handlers.length + 1;
 		var check = function() {
-			if(count == 0) {
+			if(--count == 0) {
 				turn.resetTimeout();
 				turn.handler.nextData = false;
 				cb(handlers);
 			}
 		};
-		handlers.each(function(h) {
+		handlers.each(function(h, index) {
 			h.player.playsMoat(function(moat) {
 				if(moat) {
-					handlers.erase(h);
+					handlers.splice(index, 1);
 				}
-				count--;
 				check();
 			});
 		});
 		check();
 	},
-	foreach: function(handlers, func, done, s) {
-		s = s || 0;
+	foreach: function(handlers, func, done) {
 		var i = 0;
 		var next = function() {
 			i = (i + 1) % handlers.length;
-			if(i == s) {
+			if(i == 0) {
 				done();
 			}
 			else {
@@ -56,7 +51,10 @@ var Card = new Class({
 			}
 		};
 		if(handlers.length > 0) {
-			next();
+			func(handlers[i], next);
+		}
+		else {
+			done();
 		}
 	}
 });
@@ -171,7 +169,7 @@ exports.Deck = new Class({
 		if(this.trashed.length > 0) {
 			return 'trash: ' + this.trashed.each(function(x, v, k) {
 				return (x ? x + ',' : '') + v.name;
-			});
+			}) + '\n';
 		}
 		else {
 			return 'the trash is empty\n';
@@ -411,7 +409,7 @@ cards.feast = new Class({
 		if(Object.some(turn.game.deck.cards, function(cards, name) {
 			return turn.game.deck.has(name) && turn.game.deck.cost(name) <= 5;
 		})) {
-			turn.handler.message(this.name + ': choose a card costing up to 5 treasure');
+			turn.handler.message(this.name + ': choose a card costing up to 5 treasure\n');
 			turn.handler.nextData = function(card) {
 				if(turn.game.deck.has(card) && turn.game.deck.cost(card) <= 5) {
 					turn.handler.player.gain(turn.game.deck.take(card));
@@ -690,7 +688,7 @@ cards.cellar = new Class({
 	cost: 2,
 	doAction: function(turn, done) {
 		var count = 0;
-		turn.handler.message(this.name + ': which cards do you want to discard\nskip if you are finished choosing');
+		turn.handler.message(this.name + ': which cards do you want to discard\nskip if you are finished choosing\n');
 		turn.handler.nextData = function(cardname) {
 			if(cardname != 'skip') {
 				if(!turn.player.hand.some(function(card) {
@@ -774,7 +772,7 @@ cards.militia = new Class({
 		this.attackedHandlers(turn, function(others) {
 			clearTimeout(turn.timeout);
 			turn.handler.nextData = function() {
-				turn.handler.message(this.name + ': waiting for other players');
+				turn.handler.message(this.name + ': waiting for other players\n');
 				return true;
 			}.bind(this);
 			var count = others.length;
@@ -838,8 +836,8 @@ cards.bureaucrat = new Class({
 					var hand = h.player.hand.reduce(function(x, v, k) {
 						return (x ? x + ',' : '')  + v.name;
 					});
-					turn.game.message(this.name + ': ' + h.player.name + ' reveals that his hand has no victory points: ' + hand, h);
-					h.message(this.name + ': you reveal that you have no victory points');
+					turn.game.message(this.name + ': ' + h.player.name + ' reveals that his hand has no victory points: ' + hand + '\n', h);
+					h.message(this.name + ': you reveal that you have no victory points\n');
 				}
 				next.delay(0);
 			}.bind(this), done);
@@ -858,11 +856,11 @@ cards.throneroom = new Class({
 		if(turn.player.hand.some(function(card) {
 			return !!card.doAction;
 		})) {
-			turn.handler.message(this.name + ': what card do you want to play twice');
+			turn.handler.message(this.name + ': what card do you want to play twice\n');
 			turn.handler.nextData = function(cardname) {
 				if(turn.player.hand.some(function(card) {
 					if(card.name == cardname && card.doAction) {
-						turn.game.message(this.name + ': ' + turn.player.name + ' played a  ' + cardname + ' with a throneroom', turn.handler);
+						turn.game.message(this.name + ': ' + turn.player.name + ' played a  ' + cardname + ' with a throneroom\n', turn.handler);
 						(function() {
 							card.doAction(turn, function() {
 								(function() {
@@ -933,7 +931,7 @@ cards.mine = new Class({
 		if(turn.player.hand.some(function(card) {
 			return card.treasure > 0;
 		})) {
-			turn.handler.message(this.name + ': which treasure card do you want to discard\n');
+			turn.handler.message(this.name + ': which treasure card do you want to trash\n');
 			turn.handler.nextData = function(cardname) {
 				if(!turn.player.hand.some(function(card) {
 					if(card.name == cardname && card.treasure > 0) {

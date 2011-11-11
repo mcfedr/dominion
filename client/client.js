@@ -39,9 +39,15 @@ exports.Client = new Class({
 		this.message('show hand');
 	},
 	
+	lastMessages: [],
+	
 	message: function(message) {
 		if(this.connected) {
 			this.connection.message(message + '\n');
+			this.lastMessages.push(message);
+			if(this.lastMessages.length > 10) {
+				this.lastMessages.shift();
+			}
 		}
 	},
 	
@@ -61,7 +67,7 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
-				return l == 'what is your name?';
+				return l == 'what is your name';
 			},
 			handle: function() {
 				this.handler.getName(this.message.bind(this));
@@ -79,8 +85,9 @@ exports.Client = new Class({
 			match: function(l) {
 				return l.indexOf('welcome') === 0;
 			},
-			handle: function() {
-				this.handler.welcome();
+			handle: function(l) {
+				var m = l.match(/you have joined game (\d+)/);
+				this.handler.welcome(m[1]);
 			}
 		},
 		{
@@ -89,6 +96,14 @@ exports.Client = new Class({
 			},
 			handle: function() {
 				
+			}
+		},
+		{
+			match: function(l) {
+				return l == 'invalid command';
+			},
+			handle: function() {
+				this.handler.invalidCommand(this.lastMessages);
 			}
 		},
 		{
@@ -221,7 +236,7 @@ exports.Client = new Class({
 				return l.search(/you have \d+ more buys?/) != -1;
 			},
 			handle: function(l) {
-				this.handler.morebuys(l.match(/you have (\d+) more buys?/)[1]);
+				this.handler.morebuys(parseInt(l.match(/you have (\d+) more buys?/)[1]));
 			}
 		},
 		{
@@ -229,7 +244,7 @@ exports.Client = new Class({
 				return l.search(/you have \d+ more actions?/) != -1;
 			},
 			handle: function(l) {
-				this.handler.moreactions(l.match(/you have (\d+) more actions?/)[1]);
+				this.handler.moreactions(parseInt(l.match(/you have (\d+) more actions?/)[1]));
 			}
 		},
 		{
@@ -237,7 +252,7 @@ exports.Client = new Class({
 				return l.search(/you have \d+ more cash/) != -1;
 			},
 			handle: function(l) {
-				this.handler.morecash(l.match(/you have (\d+) more cash/)[1]);
+				this.handler.morecash(parseInt(l.match(/you have (\d+) more cash/)[1]));
 			}
 		},
 		{
@@ -268,7 +283,7 @@ exports.Client = new Class({
 	
 	line: function(l) {
 		if(this.handlers.some(function(handler) {
-			if(handler.match(l)) {
+			if(handler.match.call(this, l)) {
 				handler.handle.call(this, l);
 				return true;
 			}
@@ -301,7 +316,7 @@ exports.ClientHandler = new Class({
 		
 	},
 	
-	welcome: function() {
+	welcome: function(game) {
 		
 	},
 	
@@ -371,6 +386,10 @@ exports.ClientHandler = new Class({
 	
 	finishedplaying: function(card) {
 		
+	},
+	
+	invalidCommand: function(commands) {
+		console.log('invalid: ' + commands);
 	},
 	
 	canbuy: function(cards) {

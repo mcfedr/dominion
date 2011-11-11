@@ -62,7 +62,7 @@ var Game = new Class({
 	},
 	
 	start: function() {
-		this.log('starting game ' + this.gamenum);
+		this.log(':' + this.gamenum + ': starting game');
 		this.started = new Date();
 		this.message('the game has started\n');
 		
@@ -193,7 +193,7 @@ var Game = new Class({
 	},
 	
 	end: function() {
-		this.log('finished game ' + this.gamenum);
+		this.log(':' + this.gamenum + ': finished game');
 		this.ended = true;
 		this.message('the game has finished\n');
 		this.handlers.each(function(h) {
@@ -217,7 +217,6 @@ var Turn = new Class({
 		this.handler.turn = this;
 		this.handler.message('it\'s your turn\n');
 		this.command(['show', 'status']);
-		this.handler.message('\n');
 		this.game.message('it\'s ' + this.player.name.possessive() + ' turn\n', this.handler);
 		this.resetTimeout();
 	},
@@ -241,7 +240,7 @@ var Turn = new Class({
 	},
 	
 	command: function(command) {
-		var card;
+		var cardname;
 		if(this.ended) {
 			return false;
 		}
@@ -418,7 +417,7 @@ exports.PlayerHandler = new Class({
 				
 				opengame.handlers.push(this);
 				this.game = opengame;
-				this.log(this.player.name + '--connected');
+				this.log(':' + this.game.gamenum + ':' + this.player.name + '--connected');
 				this.message('welcome ' + this.player.name + ', '
 					+ 'you have joined game ' + this.game.gamenum+ ', '
 					+ 'type help for a list of commands\n');
@@ -431,7 +430,7 @@ exports.PlayerHandler = new Class({
 			}
 		};
 		
-		this.message("hello\nwhat is your name?\n");
+		this.message("hello\nwhat is your name\n");
 	},
 	
 	buffer: '',
@@ -458,7 +457,7 @@ exports.PlayerHandler = new Class({
 	line: function(data) {
 		data = data.trim();
 		if(this.player) {
-			this.log(this.player.name + '<-' + data.replace(/\n/g, '\\n'));
+			this.log(':' + this.game.gamenum + ':' + this.player.name + '<-' + data.replace(/\n/g, '\\n'));
 		}
 		if(this.nextData) {
 			if(!this.nextData(data)) {
@@ -498,7 +497,6 @@ exports.PlayerHandler = new Class({
 					}
 					this.message('invalid command\n');
 			}
-			this.message('\n');
 		}
 	},
 	
@@ -559,12 +557,12 @@ exports.PlayerHandler = new Class({
 		if(!this.ended) {
 			try {
 				if(this.player && message != '' && message != '\n') {
-					this.log(this.player.name + '->' + message.replace(/\n/g, '\\n'));
+					this.log(':' + this.game.gamenum + ':' + this.player.name + '->' + message.replace(/\n/g, '\\n'));
 				}
 				this.socket.write(message);
 			}
 			catch(e) {
-				
+				console.log(e);
 			}
 		}
 	},
@@ -576,7 +574,7 @@ exports.PlayerHandler = new Class({
 				this.remove();
 			}
 			catch(e) {
-				
+				console.log(e);
 			}
 		}
 	},
@@ -587,7 +585,7 @@ exports.PlayerHandler = new Class({
 			this.nextData(false);
 		}
 		if(this.player) {
-			this.log(this.player.name + '--disconnected');
+			this.log(':' + this.game.gamenum + ':' + this.player.name + '--disconnected');
 			if(this.turn) {
 				this.turn.end(true);
 			}

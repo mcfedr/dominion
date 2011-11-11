@@ -18,22 +18,26 @@ exports.BasicClientHandler = new Class({
 		cb(this.myname);
 	},
 	
-	welcome: function() {
+	welcome: function(game) {
 		if(this.ai.autostart) {
 			this.startGameTimeout = this.client.start.delay(3000, this.client);
 		}
-		this.ai.welcome = true;
+		this.ai.status.gameName = game;
 		this.ai.emit('welcome');
 	},
 	
 	startGame: function() {
 		clearTimeout(this.startGameTimeout);
-		this.ai.status.gameStarted = true;
+		this.ai.status.game = true;
 		this.ai.status.hand = [];
 	},
 	
 	startTurn: function() {
-		
+		this.ai.status.turn = true;
+	},
+	
+	finishTurn: function() {
+		this.ai.status.turn = false;
 	},
 	
 	bank: function(cards) {
@@ -76,6 +80,13 @@ exports.BasicClientHandler = new Class({
 		this.ai.status.hand = [];
 	},
 	
+	invalidCommand: function(commands) {
+		console.log('invalid: (' + this.ai.name + ')');
+		console.log(commands);
+		console.log(this.ai.status);
+		process.exit(1);
+	},
+	
 	winner: function(name) {
 		if(name == this.myname) {
 			this.won = true;
@@ -87,6 +98,7 @@ exports.BasicClientHandler = new Class({
 	},
 	
 	finish: function(e) {
+		this.ai.status.game = false;
 		if(e) {
 			console.log(e);
 		}

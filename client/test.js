@@ -8,11 +8,11 @@ var randomactions = require('./easyactions/randomactions.js');
 var host = 'localhost';
 
 var handlers = [
-	simple.AI,
+	/*simple.AI,
 	simplenocopper.AI,
 	simplenocoppernoestate.AI,
 	simplenocopperonlyprovince.AI,
-	simplenocopperfirstprovince.AI,
+	simplenocopperfirstprovince.AI,*/
 	randomactions.AI
 ];
 
@@ -29,7 +29,7 @@ playersInGames = {
 	4: 0
 };
 
-var gamesToRun = 1000;
+var gamesToRun = 100;
 
 var starts = gamesToRun;
 var finishes = gamesToRun;

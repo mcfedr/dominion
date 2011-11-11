@@ -15,13 +15,13 @@ var handler = new Class({
 		this.ai.canbuy(cards);
 	},
 	
-	finishedplaying: function(card) {
+	finishedplaying: function() {
 		this.parent.apply(this, arguments);
 		this.ai.chooseaction();
 	}
 });
 
-var name = 'random_actions';
+var name = 'highest_action';
 
 exports.AI = new Class({
 	Extends: ai.BasicAI,
@@ -44,20 +44,19 @@ exports.AI = new Class({
 	
 	chooseaction: function() {
 		if(this.status.actions > 0) {
-			if(!this.status.hand.some(function(card, index) {
+			var highest, highestCost = -1;
+			this.status.hand.each(function(card) {
 				var c = theCards.getCard(card);
-				if(c.doAction && this.supportedActions.contains(card)) {
-					this.status.actions--;
-					this.status.hand.splice(index, 1);
-					/*this.waitingToPlay = (function() {
-						console.log('didnt finish ' + card);
-						console.log(this.status);
-						process.exit();
-					}).delay(500, this);*/
-					this.client.play(card);
-					return true;
+				if(c.cost > highestCost && c.doAction && this.supportedActions.contains(card)) {
+					highest = card;
 				}
-			}, this)) {
+			}, this);
+			if(highest) {
+				this.status.actions--;
+				this.status.hand.erase(highest);
+				this.client.play(highest);
+			}
+			else {
 				this.choosebuy();
 			}
 		}
@@ -77,27 +76,27 @@ exports.AI = new Class({
 		}
 	},
 	
+	firstP: false,
+	
 	canbuy: function(cards) {
-		if(this.status.buys > 0) {
-			var highest, highestCost = -1;
-			cards.each(function(card) {
-				var c = theCards.getCard(card);
-				if(c.cost > highestCost && (c.treasure > 1 || c.points > 0 || c.getPoints || this.supportedActions.contains(card))) {
-					highest = card;
-					highestCost = c.cost;
+		var highest, highestCost = -1;
+		cards.each(function(card) {
+			var c = theCards.getCard(card);
+			if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card))) {
+				if(card == 'province') {
+					this.firstP = true;
 				}
-			}, this);
-			if(highest) {
-				this.status.buys--;
-				this.client.buy(highest);
-				this.choosebuy();
+				highest = card;
+				highestCost = c.cost;
 			}
-			else {
-				this.client.done();
-			}
+		}, this);
+		if(highest) {
+			this.status.buys--;
+			this.client.buy(highest);
+			this.choosebuy();
 		}
 		else {
-			this.choosebuy();
+			this.client.done();
 		}
 	}
 });
