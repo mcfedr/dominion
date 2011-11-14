@@ -47,15 +47,24 @@ exports.AI = new Class({
 			var highest, highestCost = -1, highestIndex;
 			this.status.hand.each(function(card, index) {
 				var c = theCards.getCard(card);
-				if(c.cost > highestCost && c.doAction && this.supportedActions.contains(card)) {
-					highest = card;
-					highestIndex = index;
+				if(c.doAction && this.supportedActions.contains(card)) {
+					if(c.cost > highestCost) {
+						highest = [card];
+						highestIndex = [index];
+						highestCost = c.cost;
+					}
+					else if(c.cost == highestCost) {
+						highest.push(card);
+						highestIndex.push(index);
+					}
 				}
 			}, this);
 			if(highest) {
 				this.status.actions--;
-				this.status.hand.splice(highestIndex, 1);
-				this.client.play(highest);
+				var i = Math.floor(Math.random() * highest.length);
+				var card = highest[i];
+				this.status.hand.splice(highestIndex[i], 1);
+				this.client.play(card);
 			}
 			else {
 				this.choosebuy();
@@ -84,17 +93,23 @@ exports.AI = new Class({
 			var highest, highestCost = -1;
 			cards.each(function(card) {
 				var c = theCards.getCard(card);
-				if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card))) {
-					if(card == 'province') {
-						this.firstP = true;
+				if(c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)) || this.supportedActions.contains(card)) {
+					if(c.cost > highestCost) {
+						highest = [card];
+						highestCost = c.cost;
 					}
-					highest = card;
-					highestCost = c.cost;
+					else if(c.cost == highestCost) {
+						highest.push(card);
+					}
 				}
 			}, this);
 			if(highest) {
 				this.status.buys--;
-				this.client.buy(highest);
+				var card = highest[Math.floor(Math.random() * highest.length)];
+				this.client.buy(card);
+				if(card == 'province') {
+					this.firstP = true;
+				}
 				this.choosebuy();
 			}
 			else {

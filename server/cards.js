@@ -320,12 +320,12 @@ cards.thief = new Class({
 		this.attackedHandlers(turn, function(others) {
 			this.foreach(others, function(h, next) {
 				var card1 = h.player.reveal();
-				if(card1.treasure == 0) {
+				if(card1 && card1.treasure == 0) {
 					h.player.gain(card1, true);
 					card1 = null;
 				}
 				var card2 = h.player.reveal();
-				if(card2.treasure == 0) {
+				if(card2 && card2.treasure == 0) {
 					h.player.gain(card2, true);
 					card2 = null;
 				}
@@ -491,22 +491,27 @@ cards.spy = new Class({
 	doAction: function(turn, done) {
 		var spy = function(h, next) {
 			var card = h.player.reveal(true);
-			if(h == turn.handler) {
-				turn.handler.message(this.name + ': do you want to keep or discard ' + card.name + '\n');
-			}
-			else {
-				turn.handler.message(this.name + ': should ' + h.player.name + ' keep or discard ' + card.name + '\n');
-			}
-			turn.handler.nextData = function(action) {
-				if(action == 'keep') {
-					h.player.addtodeck(card);
+			if(card) {
+				if(h == turn.handler) {
+					turn.handler.message(this.name + ': do you want to keep or discard ' + card.name + '\n');
 				}
 				else {
-					h.player.discardCard(card);
+					turn.handler.message(this.name + ': should ' + h.player.name + ' keep or discard ' + card.name + '\n');
 				}
+				turn.handler.nextData = function(action) {
+					if(action == 'keep') {
+						h.player.addtodeck(card);
+					}
+					else {
+						h.player.discardCard(card);
+					}
+					next.delay(0);
+					return false;
+				};
+			}
+			else {
 				next.delay(0);
-				return false;
-			};
+			}
 		}.bind(this);
 		this.attackedHandlers(turn, function(others) {
 			this.foreach(others, spy, function() {
@@ -584,19 +589,21 @@ cards.adventurer = new Class({
 		if(hasMoreTreasure()) {
 			do {
 				c = turn.player.reveal();
-				if(c.treasure > 0) {
-					count++;
-					turn.player.addtohand(c, true);
-					if(!hasMoreTreasure()) {
-						turn.player.shuffle();
-						break;
+				if(c) {
+					if(c.treasure > 0) {
+						count++;
+						turn.player.addtohand(c, true);
+						if(!hasMoreTreasure()) {
+							turn.player.shuffle();
+							break;
+						}
+					}
+					else {
+						turn.player.gain(c, true);
 					}
 				}
-				else {
-					turn.player.gain(c, true);
-				}
 			}
-			while(count < 2);
+			while(count < 2 && c);
 		}
 		else {
 			turn.player.shuffle();
@@ -829,7 +836,7 @@ cards.bureaucrat = new Class({
 			this.foreach(others, function(h, next) {
 				if(!h.player.hand.some(function(card) {
 					if(card.getPoints || card.points > 0) {
-						h.player.addtodeck(card);
+						h.player.returntodeck(card);
 						return true;
 					}
 				})) {
@@ -894,21 +901,26 @@ cards.library = new Class({
 		var next = function() {
 			if(turn.player.hand.length < 7) {
 				c = turn.player.reveal(true);
-				if(c.doAction) {
-					turn.handler.message(this.name + ': do you want to keep or discard ' + c.name + '\n');
-					turn.handler.nextData = function(reply) {
-						if(reply == 'keep') {
-							turn.player.addtohand(c, true, true);
-						}
-						else {
-							turn.player.discardCard(c);
-						}
+				if(c) {
+					if(c.doAction) {
+						turn.handler.message(this.name + ': do you want to keep or discard ' + c.name + '\n');
+						turn.handler.nextData = function(reply) {
+							if(reply == 'keep') {
+								turn.player.addtohand(c, true, true);
+							}
+							else {
+								turn.player.discardCard(c);
+							}
+							next.delay(0);
+						};
+					}
+					else {
+						turn.player.addtohand(c, false, true);
 						next.delay(0);
-					};
+					}
 				}
 				else {
-					turn.player.addtohand(c, false, true);
-					next.delay(0);
+					done();
 				}
 			}
 			else {

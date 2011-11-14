@@ -42,17 +42,23 @@ exports.AI = new Class({
 		var highest, highestCost = -1;
 		cards.each(function(card) {
 			var c = theCards.getCard(card);
-			if(c.cost > highestCost && (c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints)))) {
-				if(card == 'province') {
-					this.firstP = true;
+			if(c.treasure > 1 || card == 'province' || (this.firstP && (c.points > 0 || c.getPoints))) {
+				if(c.cost > highestCost) {
+					highest = [card];
+					highestCost = c.cost;
 				}
-				highest = card;
-				highestCost = c.cost;
+				else if(c.cost == highestCost) {
+					highest.push(card);
+				}
 			}
 		}, this);
 		if(highest) {
 			this.status.buys--;
-			this.client.buy(highest);
+			var card = highest[Math.floor(Math.random() * highest.length)];
+			this.client.buy(card);
+			if(card == 'province') {
+				this.firstP = true;
+			}
 			this.choosebuy();
 		}
 		else {

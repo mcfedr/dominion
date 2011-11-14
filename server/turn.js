@@ -21,7 +21,7 @@ exports.Turn = new Class({
 	},
 	
 	resetTimeout: function() {
-		clearTimeout(this.timeout);
+		/*clearTimeout(this.timeout);
 		this.timeout = (function() {
 			this.handler.kicks++;
 			if(this.handler.kicks <= 3) {
@@ -35,7 +35,7 @@ exports.Turn = new Class({
 				this.handler.end();
 				this.game.message(this.player.name + ' has been kicked for taking too long\n');
 			}
-		}).delay(10000, this);
+		}).delay(10000, this);*/
 	},
 	
 	command: function(command) {
@@ -186,8 +186,8 @@ exports.Turn = new Class({
 			this.game.message(this.player.name + ' has finished his turn\n', this.handler);
 			this.player.discardHand();
 			this.player.draw();
-			this.after.delay(0);
 		}
+		this.after.delay(0);
 		this.ended = true;
 		this.handler.turn = null;
 	}

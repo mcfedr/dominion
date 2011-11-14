@@ -30,11 +30,16 @@ exports.BasicClientHandler = new Class({
 		clearTimeout(this.startGameTimeout);
 		this.ai.status.game = true;
 		this.ai.status.hand = [];
+		this.ai.status.deck = [];
+		this.ai.status.table = [];
+		this.ai.status.discard = [];
+		this.ai.status.turns = 0;
+		this.ai.status.numCards = 10;
 	},
 	
 	startTurn: function() {
 		this.ai.status.turn = true;
-		this.ai.emit('turn');
+		this.ai.status.turns++;
 	},
 	
 	finishTurn: function() {
@@ -47,6 +52,34 @@ exports.BasicClientHandler = new Class({
 	
 	drew: function(card) {
 		this.ai.status.hand.push(card);
+	},
+	
+	gain: function(card) {
+		
+	},
+	
+	addtodeck: function(card) {
+		
+	},
+	
+	returntodeck: function(card) {
+		
+	},
+	
+	reveal: function(card) {
+		
+	},
+	
+	addtohand: function(card) {
+		
+	},
+	
+	trash: function(card) {
+		
+	},
+	
+	discardCard: function(card) {
+		
 	},
 	
 	hand: function(cards) {
@@ -102,7 +135,7 @@ exports.BasicClientHandler = new Class({
 		else {
 			this.won = false;
 		}
-		this.ai.emit('won', this.won);
+		this.ai.emit('won', this.won, this.ai.status);
 	},
 	
 	finish: function(e) {

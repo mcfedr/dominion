@@ -39,10 +39,18 @@ var Player = exports.Player = new Class({
 	},
 	
 	addtodeck: function(card, quiet) {
+		this.deck.push(card);
+		if(!quiet) {
+			this.handler.message('you add a ' + card.name + ' to your deck\n');
+			this.handler.game.message(this.name + ' decked a ' + card.name + '\n', this.handler);
+		}
+	},
+	
+	returntodeck: function(card, quiet) {
 		this.hand.erase(card);
 		this.deck.push(card);
 		if(!quiet) {
-			this.handler.message('you decked a ' + card.name + '\n');
+			this.handler.message('you returned a ' + card.name + ' to your deck\n');
 			this.handler.game.message(this.name + ' decked a ' + card.name + '\n', this.handler);
 		}
 	},
@@ -53,8 +61,13 @@ var Player = exports.Player = new Class({
 		}
 		var c = this.deck.pop();
 		if(!quiet) {
-			this.handler.message('you revealed a ' + c.name + '\n');
-			this.handler.game.message(this.name + ' revealed a ' + c.name + '\n', this.handler);
+			if(c) {
+				this.handler.message('you revealed a ' + c.name + '\n');
+				this.handler.game.message(this.name + ' revealed a ' + c.name + '\n', this.handler);
+			}
+			else {
+				this.handler.message('you have no more cards in your deck\n');
+			}
 		}
 		return c;
 	},
@@ -64,9 +77,19 @@ var Player = exports.Player = new Class({
 		var c, i;
 		for(i = 0;i < count;i++) {
 			c = this.reveal(true);
-			this.hand.push(c);
+			if(c) {
+				this.hand.push(c);
+			}
+			else {
+				break;
+			}
 			if(!quiet) {
-				this.handler.message('you drew a ' + c.name + '\n');
+				if(c) {
+					this.handler.message('you drew a ' + c.name + '\n');
+				}
+				else {
+					this.handler.message('you have no more cards in your deck\n');
+				}
 			}
 		}
 	},
