@@ -41,7 +41,7 @@ var Player = exports.Player = new Class({
 	addtodeck: function(card, quiet) {
 		this.deck.push(card);
 		if(!quiet) {
-			this.handler.message('you add a ' + card.name + ' to your deck\n');
+			this.handler.message('you added a ' + card.name + ' to your deck\n');
 			this.handler.game.message(this.name + ' decked a ' + card.name + '\n', this.handler);
 		}
 	},
@@ -111,11 +111,17 @@ var Player = exports.Player = new Class({
 		this.handler.game.message(this.name + ' played a ' + card.name + '\n', this.handler);
 	},
 	
-	trash: function(card) {
-		this.hand.erase(card);
-		this.table.erase(card);
-		this.handler.message('you trashed a ' + card.name + '\n');
-		this.handler.game.message(this.name + ' trashed a ' + card.name + '\n', this.handler);
+	trash: function(card, table) {
+		if(table) {
+			this.table.erase(card);
+			this.handler.message('you trashed a ' + card.name + ' from your table\n');
+			this.handler.game.message(this.name + ' trashed a ' + card.name + ' from his table\n', this.handler);
+		}
+		else {
+			this.hand.erase(card);
+			this.handler.message('you trashed a ' + card.name + ' from your hand\n');
+			this.handler.game.message(this.name + ' trashed a ' + card.name + ' from his hand\n', this.handler);
+		}
 	},
 	
 	discardCard: function(card) {

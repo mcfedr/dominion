@@ -64,6 +64,7 @@ exports.AI = new Class({
 				var i = Math.floor(Math.random() * highest.length);
 				var card = highest[i];
 				this.status.hand.splice(highestIndex[i], 1);
+				this.status.table.push(card);
 				this.client.play(card);
 			}
 			else {

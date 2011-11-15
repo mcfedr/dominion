@@ -22,3 +22,12 @@ Object.prototype.reduce = function(obj, joinfunc, t) {
 	}, t);
 	return x;
 };
+
+Array.prototype.removeOne = function(val) {
+	var i = this.indexOf(val);
+	if(i != -1) {
+		this.splice(i, 1);
+		return true;
+	}
+	return false;
+};

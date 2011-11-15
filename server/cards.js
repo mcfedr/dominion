@@ -404,7 +404,7 @@ cards.feast = new Class({
 	description: 'Trash this card.\n Gain a card costing up to 5 Treasure',
 	cost: 4,
 	doAction: function(turn, done) {
-		turn.player.trash(this);
+		turn.player.trash(this, true);
 		turn.game.deck.trash(this);
 		if(Object.some(turn.game.deck.cards, function(cards, name) {
 			return turn.game.deck.has(name) && turn.game.deck.cost(name) <= 5;
@@ -490,7 +490,7 @@ cards.spy = new Class({
 	cost: 4,
 	doAction: function(turn, done) {
 		var spy = function(h, next) {
-			var card = h.player.reveal(true);
+			var card = h.player.reveal();
 			if(card) {
 				if(h == turn.handler) {
 					turn.handler.message(this.name + ': do you want to keep or discard ' + card.name + '\n');
@@ -503,7 +503,7 @@ cards.spy = new Class({
 						h.player.addtodeck(card);
 					}
 					else {
-						h.player.discardCard(card);
+						h.player.gain(card);
 					}
 					next.delay(0);
 					return false;
@@ -586,20 +586,27 @@ cards.adventurer = new Class({
 				return card.treasure > 0;
 			});
 		};
+		var olddone = done, cardstodiscard = [];
+		done = function() {
+			cardstodiscard.each(function(c) {
+				turn.player.gain(c);
+			});
+			olddone();
+		}
 		if(hasMoreTreasure()) {
 			do {
 				c = turn.player.reveal();
 				if(c) {
 					if(c.treasure > 0) {
 						count++;
-						turn.player.addtohand(c, true);
+						turn.player.addtohand(c);
 						if(!hasMoreTreasure()) {
 							turn.player.shuffle();
 							break;
 						}
 					}
 					else {
-						turn.player.gain(c, true);
+						cardstodiscard.push(c);
 					}
 				}
 			}
@@ -898,9 +905,16 @@ cards.library = new Class({
 		+ 'drawn this way, as you draw them; discard the set aside cards after you finish drawing.',
 	cost: 4,
 	doAction: function(turn, done) {
+		var olddone = done, cardstodiscard = [];
+		done = function() {
+			cards.each(function(c) {
+				turn.player.gain(c);
+			});
+			olddone();
+		};
 		var next = function() {
 			if(turn.player.hand.length < 7) {
-				c = turn.player.reveal(true);
+				c = turn.player.reveal();
 				if(c) {
 					if(c.doAction) {
 						turn.handler.message(this.name + ': do you want to keep or discard ' + c.name + '\n');
@@ -909,7 +923,7 @@ cards.library = new Class({
 								turn.player.addtohand(c, true, true);
 							}
 							else {
-								turn.player.discardCard(c);
+								cardstodiscard.push(c);
 							}
 							next.delay(0);
 						};

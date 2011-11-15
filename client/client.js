@@ -258,10 +258,18 @@ exports.Client = new Class({
 		},
 		{
 			match: function(l) {
-				return l.indexOf('you trashed a') === 0;
+				return l.search(/you trashed a (\w+?) from your hand/) != -1;
 			},
 			handle: function(l) {
-				this.handler.trash(l.substr(l.lastIndexOf(' ') + 1));
+				this.handler.trash(l.substr(l.lastIndexOf(' ') + 1), false);
+			}
+		},
+		{
+			match: function(l) {
+				return l.search(/you trashed a (\w+?) from your table/) != -1;
+			},
+			handle: function(l) {
+				this.handler.trash(l.substr(l.lastIndexOf(' ') + 1), true);
 			}
 		},
 		{

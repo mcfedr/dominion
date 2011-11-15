@@ -49,6 +49,7 @@ exports.AI = new Class({
 				if(c.doAction && this.supportedActions.contains(card)) {
 					this.status.actions--;
 					this.status.hand.splice(index, 1);
+					this.status.table.push(card);
 					this.client.play(card);
 					return true;
 				}

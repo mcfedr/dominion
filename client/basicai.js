@@ -2,6 +2,7 @@ var client = require('./client.js');
 var theCards = require('./../server/cards.js');
 var rl = require('readline');
 var event = require('events');
+require('./../server/functions.js');
 
 exports.BasicClientHandler = new Class({
 	Extends: client.ClientHandler,
@@ -40,6 +41,7 @@ exports.BasicClientHandler = new Class({
 	startTurn: function() {
 		this.ai.status.turn = true;
 		this.ai.status.turns++;
+		this.ai.status.buyPhase = false;
 	},
 	
 	finishTurn: function() {
@@ -51,39 +53,57 @@ exports.BasicClientHandler = new Class({
 	},
 	
 	drew: function(card) {
+		this.ai.status.deck.removeOne(card);
 		this.ai.status.hand.push(card);
 	},
 	
 	gain: function(card) {
-		
+		this.ai.status.discard.push(card);
+		this.ai.status.numCards++;
 	},
 	
 	addtodeck: function(card) {
-		
+		this.ai.status.deck.push(card);
+		this.ai.status.numCards++;
 	},
 	
 	returntodeck: function(card) {
-		
+		this.ai.status.hand.removeOne(card);
+		this.ai.status.deck.push(card);
 	},
 	
 	reveal: function(card) {
-		
+		this.ai.status.deck.removeOne(card);
+		this.ai.status.numCards--;
 	},
 	
 	addtohand: function(card) {
-		
+		this.ai.status.hand.push(card);
+		this.ai.status.numCards++;
 	},
 	
-	trash: function(card) {
-		
+	trash: function(card, table) {
+		if(table) {
+			this.ai.status.table.removeOne(card);
+		}
+		else {
+			this.ai.status.hand.removeOne(card);
+		}
+		this.ai.status.numCards--;
 	},
 	
 	discardCard: function(card) {
-		
+		this.ai.status.hand.removeOne(card);
+		this.ai.status.discard.push(card);
+	},
+	
+	shuffled: function() {
+		this.ai.status.deck.append(this.ai.status.discard);
+		this.ai.status.discard = [];
 	},
 	
 	hand: function(cards) {
-		this.ai.status.hand = cards;
+		//this.ai.status.hand = cards;
 	},
 	
 	actions: function(actions) {
@@ -111,7 +131,10 @@ exports.BasicClientHandler = new Class({
 	},
 	
 	finishTurn: function() {
+		this.ai.status.discard.append(this.ai.status.hand);
+		this.ai.status.discard.append(this.ai.status.table);
 		this.ai.status.hand = [];
+		this.ai.status.table = [];
 	},
 	
 	invalidCommand: function(commands) {

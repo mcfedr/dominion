@@ -5,17 +5,21 @@ var simplenocopperonlyprovince = require('./simple/simplenocopperonlyprovince.js
 var simplenocopperfirstprovince = require('./simple/simplenocopperfirstprovince.js');
 var randomactions = require('./easyactions/randomactions.js');
 var highestactions = require('./easyactions/highestactions.js');
+var first = require('./learning/first.js');
+var second = require('./learning/second.js');
 
 var host = 'localhost';
 
 var handlers = [
-	simple.AI,
+	/*simple.AI,
 	simplenocopper.AI,
 	simplenocoppernoestate.AI,
 	simplenocopperonlyprovince.AI,
 	simplenocopperfirstprovince.AI,
 	randomactions.AI,
-	highestactions.AI
+	highestactions.AI,*/
+	first.AI,
+	second.AI
 ];
 
 wins = {};
@@ -61,7 +65,7 @@ playersInGames = {
 	4: 0
 };
 
-var gamesToRun = 1000;
+var gamesToRun = 1;
 var runsToRun = 1;
 
 var runs = 0;
@@ -135,6 +139,10 @@ var run = function() {
 				else {
 					points[h.aiName] -= players;
 				}
+				var c = status.deck.length + status.discard.length + status.hand.length + status.table.length;
+				if(c != status.numCards) {
+					console.log('wrong cards', c, status);
+				}
 				checkEnded();
 			});
 			ais.push(ai);
@@ -190,5 +198,5 @@ var stats = function() {
 }
 
 var say = function(what) {
-	require('child_process').spawn('say', [what]);
+	//require('child_process').spawn('say', [what]);
 }
