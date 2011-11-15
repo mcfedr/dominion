@@ -11,13 +11,13 @@ var second = require('./learning/second.js');
 var host = 'localhost';
 
 var handlers = [
-	/*simple.AI,
+	simple.AI,
 	simplenocopper.AI,
 	simplenocoppernoestate.AI,
 	simplenocopperonlyprovince.AI,
 	simplenocopperfirstprovince.AI,
 	randomactions.AI,
-	highestactions.AI,*/
+	highestactions.AI,
 	first.AI,
 	second.AI
 ];
@@ -65,8 +65,8 @@ playersInGames = {
 	4: 0
 };
 
-var gamesToRun = 1;
-var runsToRun = 1;
+var gamesToRun = 1000;
+var runsToRun = 10;
 
 var runs = 0;
 
@@ -155,7 +155,8 @@ var run = function() {
 			console.log(name + ': ' + points);
 		});
 		if(!runsToRun || runs < runsToRun) {
-			say('finished run');
+			say('finished run ' + runs);
+			stats();
 			run();
 		}
 		else {
@@ -198,5 +199,5 @@ var stats = function() {
 }
 
 var say = function(what) {
-	//require('child_process').spawn('say', [what]);
+	require('child_process').spawn('say', [what]);
 }

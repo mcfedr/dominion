@@ -13,6 +13,7 @@ exports.Turn = new Class({
 		this.buys = 1;
 		this.spent = 0;
 		this.treasure = 0;
+		this.buyPhase = false;
 		this.handler.turn = this;
 		this.handler.message('it\'s your turn\n');
 		this.command(['show', 'status']);
@@ -92,6 +93,7 @@ exports.Turn = new Class({
 				if(this.game.deck.has(cardname)) {
 					var cost = this.game.deck.cost(cardname);
 					if(cost <= this.cash()) {
+						this.buyPhase = true;
 						this.resetTimeout();
 						this.spent += cost;
 						this.buys--;
@@ -113,30 +115,35 @@ exports.Turn = new Class({
 		}
 		else if(command[0] == 'play') {
 			cardname = command[1];
-			if(this.actions > 0) {
-				if(!this.player.hand.some(function(card) {
-					if(card.name == cardname) {
-						if(card.doAction) {
-							this.resetTimeout();
-							this.actions--;
-							this.player.play(card);
-							card.doAction(this, function() {
-								this.checkEnd();
-								this.handler.message('you finished playing ' + cardname + '\n');
-								this.game.message(this.player.name + ' finished playing ' + cardname + '\n', this.handler);
-							}.bind(this));
+			if(!this.buyPhase) {
+				if(this.actions > 0) {
+					if(!this.player.hand.some(function(card) {
+						if(card.name == cardname) {
+							if(card.doAction) {
+								this.resetTimeout();
+								this.actions--;
+								this.player.play(card);
+								card.doAction(this, function() {
+									this.checkEnd();
+									this.handler.message('you finished playing ' + cardname + '\n');
+									this.game.message(this.player.name + ' finished playing ' + cardname + '\n', this.handler);
+								}.bind(this));
+							}
+							else {
+								this.handler.message(cardname + ' isn\'t an action card\n');
+							}
+							return true;
 						}
-						else {
-							this.handler.message(cardname + ' isn\'t an action card\n');
-						}
-						return true;
+					}, this)) {
+						this.handler.message('you don\'t have this card\n');
 					}
-				}, this)) {
-					this.handler.message('you don\'t have this card\n');
+				}
+				else {
+					this.handler.message('you don\'t have any actions\n');
 				}
 			}
 			else {
-				this.handler.message('you don\'t have any actions\n');
+				this.handler.message('you have started the buy phase and cannot play any more actions\n');
 			}
 			return true;
 		}
@@ -171,7 +178,7 @@ exports.Turn = new Class({
 	
 	checkEnd: function() {
 		if(!this.game.checkEnd()) {
-			if(this.buys == 0 && (this.actions == 0 || !this.player.hand.some(function(card) {
+			if(this.buys == 0 && (this.buyPhase || this.actions == 0 || !this.player.hand.some(function(card) {
 				return !!card.doAction;
 			}))) {
 				this.end();

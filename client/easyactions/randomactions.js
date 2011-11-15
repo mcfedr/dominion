@@ -66,7 +66,7 @@ exports.AI = new Class({
 		if(this.status.buys > 0) {
 			this.client.canbuy();
 		}
-		else if(this.status.actions > 0 && this.status.hand.some(function(card) {
+		else if(!this.status.buyPhase && this.status.actions > 0 && this.status.hand.some(function(card) {
 			return !!theCards.getCard(card).doAction;
 		})) {
 			this.client.done();
@@ -92,6 +92,7 @@ exports.AI = new Class({
 			}, this);
 			if(highest) {
 				this.status.buys--;
+				this.status.buyPhase = true;
 				var card = highest[Math.floor(Math.random() * highest.length)];
 				this.client.buy(card);
 				if(card == 'province') {

@@ -24,7 +24,7 @@ var handler = new Class({
 	winner: function(name) {
 		this.parent.apply(this, arguments);
 		this.ai.winner(this.won);
-	},
+	}
 });
 
 var name = 'learning_second';
@@ -50,7 +50,8 @@ exports.AI = new Class({
 	
 	initialize: function() {
 		this.parent.apply(this, arguments);
-		this.db = new DB();
+		this.db = DB;
+		this.db.initialize();
 	},
 	
 	chooseaction: function() {
@@ -70,41 +71,27 @@ exports.AI = new Class({
 						scores[obj.action.play] += obj.value;
 					}
 					else {
-						console.log(scores);
-						var min = 1, total = 0;
-						Object.each(scores, function(val) {
-							total += val;
-							if(val < min) {
-								min = val;
-							}
-						});
-						if(min < 1) {
-							total = 0;
-							min++;
-							Object.each(scores, function(val, k) {
-								scores[k] += min;
-								total += scores[k];
-							});
-						}
+						var total = this.rejigScores(scores);
 						var i = Math.floor(Math.random() * total), sofar = 0;
-						Object.some(scores, function(val, c) {
+						if(!Object.some(scores, function(val, c) {
 							sofar += val;
 							if(sofar > i) {
+								this.chain.push(this.getActionChain(c));
 								if(c != 'pass') {
 									this.status.actions--;
 									this.status.hand.removeOne(c);
 									this.status.table.push(c);
-									this.chain.push(this.getActionChain(c));
 									this.client.play(c);
-									return true;
 								}
 								else {
-									this.chain.push(this.getActionChain(c));
 									this.choosebuy.delay(0, this);
-									return true;
 								}
+								return true;
 							}
-						}, this);
+							return false;
+						}, this)) {
+							console.log('never get here a');
+						}
 					}
 				}.bind(this));
 			}
@@ -131,13 +118,39 @@ exports.AI = new Class({
 	canbuy: function(cards) {
 		if(this.status.buys > 0) {
 			if(cards.length > 0) {
-				var i = Math.floor(Math.random() * cards.length);
-				var c = cards[i];
-				this.status.buys--;
-				this.status.buyPhase = true;
-				this.chain.push(this.getBuyChain(c));
-				this.client.buy(c);
-				this.choosebuy();
+				var scores = {};
+				cards.each(function(c) {
+					scores[c] = 1;
+				});
+				scores.pass = 1;
+				this.db.nearbyBuyStatuses(this.getStatusSummary(), cards, function(err, obj) {
+					if(obj) {
+						scores[obj.action.buy] += obj.value;
+					}
+					else {
+						var total = this.rejigScores(scores);
+						var i = Math.floor(Math.random() * total), sofar = 0;
+						if(!Object.some(scores, function(val, c) {
+							sofar += val;
+							if(sofar > i) {
+								this.chain.push(this.getBuyChain(c));
+								if(c != 'pass') {
+									this.status.buys--;
+									this.status.buyPhase = true;
+									this.client.buy(c);
+									this.choosebuy.delay(0, this);
+								}
+								else {
+									this.client.done();
+								}
+								return true;
+							}
+							return false;
+						}, this)) {
+							console.log('never get here b', i, sofar, total, scores);
+						}
+					}
+				}.bind(this));
 			}
 			else {
 				this.client.done();
@@ -146,6 +159,26 @@ exports.AI = new Class({
 		else {
 			this.choosebuy();
 		}
+	},
+	
+	rejigScores: function(scores) {
+		var min = 1, total = 0;
+		Object.each(scores, function(val) {
+			total += val;
+			if(val < min) {
+				min = val;
+			}
+		});
+		if(min < 1) {
+			total = 0;
+			min = -min;
+			min++;
+			Object.each(scores, function(val, k) {
+				scores[k] += min;
+				total += scores[k];
+			});
+		}
+		return total;
 	},
 	
 	chain: [],
@@ -173,7 +206,7 @@ exports.AI = new Class({
 	getStatusSummary: function() {
 		return {
 			numCards: this.status.numCards,
-			turn: this.status.turn,
+			turn: this.status.turns,
 			actionCards: this.status.hand.filter(function(card) {
 				var c = theCards.getCard(card);
 				return !!c.doAction && this.supportedActions.contains(card);
@@ -202,16 +235,21 @@ exports.AI = new Class({
 	}
 });
 
-var DB = new Class({
+var DB = {
+	
+	aiCount: 0,
 	
 	initialize: function() {
-		this.client = new mongo.Db('learning_first', new mongo.Server("127.0.0.1", 27017, {}));
-		this.client.open(function() {
-			this.opened = true;
-			this.onOpen.each(function(cb) {
-				cb(this.client);
-			}, this);
-		}.bind(this));
+		this.aiCount++;
+		if(!this.opened) {
+			this.client = new mongo.Db('learning_first', new mongo.Server("127.0.0.1", 27017, {}));
+			this.client.open(function() {
+				this.opened = true;
+				this.onOpen.each(function(cb) {
+					cb(this.client);
+				}, this);
+			}.bind(this));
+		}
 	},
 	
 	onOpen: [],
@@ -226,8 +264,10 @@ var DB = new Class({
 	},
 	
 	close: function() {
-		if(this.opened) {
+		this.aiCount--;
+		if(this.aiCount == 0 && this.opened) {
 			this.client.close();
+			this.opened = false;
 		}
 	},
 	
@@ -243,8 +283,8 @@ var DB = new Class({
 	
 	nearbyActionStatuses: function(status, eachcb) {
 		var query = {
-			/*"status.numCards": { $gt: status.numCards - 5, $lt: status.numCards + 5 },
-			"status.turn": { $gt: status.turn - 3, $lt: status.turn + 3 },*/
+			"status.numCards": {$gt: status.numCards - 5, $lt: status.numCards + 5},
+			"status.turn": {$gt: status.turn - 3, $lt: status.turn + 3},
 			"status.actionCards": {$all: status.actionCards},
 			"action.play": {$in: status.actionCards}
 		};
@@ -256,13 +296,13 @@ var DB = new Class({
 		});
 	},
 	
-	nearbyBuyStatuses: function(status, eachcb) {
+	nearbyBuyStatuses: function(status, canbuycards, eachcb) {
 		var query = {
-			"status.numCards": { $gt: status.numCards - 5, $lt: status.numCards + 5 },
-			"status.turn": { $gt: status.turn - 3, $lt: status.turn + 3 },
+			"status.numCards": {$gt: status.numCards - 5, $lt: status.numCards + 5},
+			"status.turn": {$gt: status.turn - 3, $lt: status.turn + 3},
 			"status.cash": status.cash,
 			"status.buys": status.buys,
-			"action.buy": {$exists: true},
+			"action.buy": {$in: canbuycards}
 		};
 		var fields = {'value':1, 'action.buy':1};
 		this.open(function(client) {
@@ -271,6 +311,6 @@ var DB = new Class({
 			});
 		});
 	}
-});
+};
 
 exports.AI.aiName = name;

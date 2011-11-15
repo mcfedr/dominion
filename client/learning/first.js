@@ -24,7 +24,7 @@ var handler = new Class({
 	winner: function(name) {
 		this.parent.apply(this, arguments);
 		this.ai.winner(this.won);
-	},
+	}
 });
 
 var name = 'learning_first';
@@ -50,7 +50,8 @@ exports.AI = new Class({
 	
 	initialize: function() {
 		this.parent.apply(this, arguments);
-		this.db = new DB();
+		this.db = DB;
+		this.db.initialize();
 	},
 	
 	chooseaction: function() {
@@ -62,10 +63,10 @@ exports.AI = new Class({
 			if(actionCards.length > 0) {
 				var i = Math.floor(Math.random() * actionCards.length);
 				var c = actionCards[i];
+				this.chain.push(this.getActionChain(c));
 				this.status.actions--;
 				this.status.hand.removeOne(c);
 				this.status.table.push(c);
-				this.chain.push(this.getActionChain(c));
 				this.client.play(c);
 			}
 			else {
@@ -81,7 +82,7 @@ exports.AI = new Class({
 		if(this.status.buys > 0) {
 			this.client.canbuy();
 		}
-		else if(this.status.actions > 0 && this.status.hand.some(function(card) {
+		else if(!this.status.buyPhase && this.status.actions > 0 && this.status.hand.some(function(card) {
 			return !!theCards.getCard(card).doAction;
 		})) {
 			this.client.done();
@@ -93,8 +94,9 @@ exports.AI = new Class({
 			if(cards.length > 0) {
 				var i = Math.floor(Math.random() * cards.length);
 				var c = cards[i];
-				this.status.buys--;
 				this.chain.push(this.getBuyChain(c));
+				this.status.buys--;
+				this.status.buyPhase = true;
 				this.client.buy(c);
 				this.choosebuy();
 			}
@@ -132,7 +134,7 @@ exports.AI = new Class({
 	getStatusSummary: function() {
 		return {
 			numCards: this.status.numCards,
-			turn: this.status.turn,
+			turn: this.status.turns,
 			actionCards: this.status.hand.filter(function(card) {
 				var c = theCards.getCard(card);
 				return !!c.doAction && this.supportedActions.contains(card);
@@ -161,16 +163,21 @@ exports.AI = new Class({
 	}
 });
 
-var DB = new Class({
+var DB = {
+	
+	aiCount: 0,
 	
 	initialize: function() {
-		this.client = new mongo.Db(name, new mongo.Server("127.0.0.1", 27017, {}));
-		this.client.open(function() {
-			this.opened = true;
-			this.onOpen.each(function(cb) {
-				cb(this.client);
-			}, this);
-		}.bind(this));
+		this.aiCount++;
+		if(!this.opened) {
+			this.client = new mongo.Db(name, new mongo.Server("127.0.0.1", 27017, {}));
+			this.client.open(function() {
+				this.opened = true;
+				this.onOpen.each(function(cb) {
+					cb(this.client);
+				}, this);
+			}.bind(this));
+		}
 	},
 	
 	onOpen: [],
@@ -185,8 +192,10 @@ var DB = new Class({
 	},
 	
 	close: function() {
-		if(this.opened) {
+		this.aiCount--;
+		if(this.aiCount == 0 && this.opened) {
 			this.client.close();
+			this.opened = false;
 		}
 	},
 	
@@ -199,6 +208,6 @@ var DB = new Class({
 			});
 		});
 	}
-});
+};
 
 exports.AI.aiName = name;
